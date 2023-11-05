@@ -158,3 +158,18 @@ document.getElementById('image-upload').addEventListener('change', function(e) {
 document.getElementById('run-classification').addEventListener('click', function() {
     document.getElementById('image-upload').click();
 });
+
+
+//for the clickable example images
+let exampleImages = document.getElementsByClassName('example-image');
+for (let i = 0; i < exampleImages.length; i++) {
+    exampleImages[i].addEventListener('click', function() {
+        // Create a new Blob object from the image data
+        fetch(this.src)
+            .then(response => response.blob())
+            .then(blob => {
+                // Process and classify the image
+                processImage(blob);
+            });
+    });
+}
