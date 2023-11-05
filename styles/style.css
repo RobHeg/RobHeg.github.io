@@ -1,17 +1,16 @@
 html {
-  height: 100%;
-  width: 100%;
+  min-height: 100%;
+  min-width: 100%;
   margin: 0;
   padding: 0;
-  font-size: 17px;
+  font-size: 20px;
   font-family: "Open Sans", sans-serif;
-  background-color: white;
+  background-color: rgb(227,230,233);
 }	
 
 body {
-  background-color: rgb(240,240,240);
-  height: 100%;
-  width: 100%;
+  min-height: 100%;
+  min-width: 100%;
   margin: 0;
   padding: 0;
 }
@@ -21,15 +20,14 @@ header {
   font-family: "Roboto", sans-serif;
   color: white;
   text-align: center;
-  background-color: rgb(36,41,46);
+  background-color: rgb(27,70,73); /*rgb(37,40,43);*/
   margin: 0px;
-  margin-bottom: 20px;
   padding: 20px;
   //border: 0px;
 }
 
 main {
-  margin: auto;
+  margin: 20px;
 }
 
 
@@ -39,21 +37,78 @@ h1 {
   font-family: "Roboto", sans-serif;
 }
 
+p,
+li {
+  font-size: 25px;
+  line-height: 1.5;
+}
+
+canvas{
+	display: block;
+	margin: auto;
+}
+
 #white-area {
   background-color: rgb(253,253,253);
   border-radius: 5px;
   box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+  margin: 20px 0px;
   padding: 20px;
-  margin: 20px 20px 20px 20px;
+
+  display: flex; /* This will make the div a flex container */
+  flex-direction: column; /* This will make the child elements lay out in a column */
+  justify-content: center; /* This will vertically center the child elements */
 }
 
-p,
-li {
-  font-size: 16px;
-  line-height: 1.5;
+#horizontal-alignment {
+    display: flex;
+    flex-direction: row;
+    align-items: center; /* This will horizontally center the child elements */
+    justify-content: center; /* This will distribute the child elements evenly with space around them */
 }
 
-img {
-  display: block;
-  margin: auto;
+
+.classify-image-button {
+  color: white;
+  font-family: 'Roboto', sans-serif;
+  font-size: 20px;
+  text-align: center;
+  
+  background-color: rgb(37,80,83);
+  border: none;
+  box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
+  
+  padding: 10px 20px;
+  margin: 5px 20px;
+  width: 460px;
+  height: 100px;
+
+  transition-duration: 0.2s;
+}
+
+.classify-image-button:hover {
+  background-color: rgb(72,82,92);
+}
+
+#dropzone {
+    width: 416px;
+    height: 416px;
+    border: 2px dashed #000; /* black dashed border */
+    color: #000; /* black text */
+    font-size: 20px; /* 20px text */
+    line-height: 1.5; /* better vertical alignment */
+    text-align: center;
+    padding: 10px 20px;
+    margin: 5px 20px;
+    transition: background-color 0.3s ease; /* smooth transition */
+}
+
+/*#dropzone:hover {*/
+/*    background-color: #ddd; /* light grey background on hover */
+/*}*/
+
+#canvas-container {
+    display: flex; /* This will make the div a flex container */
+    justify-content: center; /* This will center the child elements horizontally */
+    align-items: center; /* This will center the child elements vertically */
 }

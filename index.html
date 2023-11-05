@@ -14,13 +14,29 @@ As this is stored at https://github.com/RobHeg/RobHeg.github.io this is hosted b
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js"></script>
     <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   </head>
   <body>
     <header>
         <h1> My DEEP Learning webpage </h1>
     </header>
     <main>
-        <img src="images/DEEP-Learning-picture.png" alt="A picture of DEEP learning, according to an AI image generator" width = 200px height = 200px/>
+        <div id="horizontal-alignment">
+            <div id="white-area" style="height:1060px; margin: 0px 10px;"> 
+                <input type="file" id="image-upload" accept="image/*" style="display: none">
+                <button id="run-classification" class="classify-image-button">Click here to choose your own image</button>
+                <p style="font-size:20px; text-align:center;">or</p>
+                <div id="dropzone">Drop your image here</div>
+                <p style="font-size:20px; text-align:center;">or click on one of those examples:</p>
+            </div>
+            <div id="white-area" style="height:1060px"> 
+                <div>
+                    <div id="canvas-container" style="height:500px"></div> 
+                    <p id="result-text" style="background-color:rgb(187,190,193); padding:10px;"></p>
+                    <div id="classifier-results" style="height:450px"></div>
+                </div>
+            </div>
+        </div>
         <div id="white-area">             
             <p>This is a webpage for my DEEP learning course</p>
             <ul>
@@ -28,10 +44,8 @@ As this is stored at https://github.com/RobHeg/RobHeg.github.io this is hosted b
                 <li>point2</li>
             </ul>
             <p>This is a paragraph of text in a text box.</p>
-
         </div>
+        <script src="scripts/main.js"></script>
     </main>
-    <script src="scripts/main.js"></script>
-
   </body>
 </html>
