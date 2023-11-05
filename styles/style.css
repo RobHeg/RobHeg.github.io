@@ -157,3 +157,9 @@ canvas{
     background-color: #007bff;
     color: #fff;
 }
+
+@media (max-width: 800px) {
+  #horizontal-alignment {
+    flex-direction: column;
+  }
+}
