@@ -10,7 +10,7 @@ let canvas;
 
 function preload() {    //called at the beginning, first
   classifier = ml5.imageClassifier('MobileNet');
-  img = loadImage('https://th.bing.com/th/id/OIP.Hp7DTN8RxWUVwFIcfeb0SwHaFj?w=228&h=180&c=7&r=0&o=5&dpr=1.5&pid=1.7'); 
+  img = loadImage('https://live.staticflickr.com/3561/3333523138_b5d44ea199_n.jpg'); //https://th.bing.com/th/id/OIP.Hp7DTN8RxWUVwFIcfeb0SwHaFj?w=228&h=180&c=7&r=0&o=5&dpr=1.5&pid=1.7'); 
 }
 
 function setup() {      //called at the beginning, second

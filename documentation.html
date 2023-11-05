@@ -22,7 +22,15 @@
     </header>
     <main>
         <div id="white-area">
-            <p>This is the Documentation page.</p>
+            <h2>1) Interaktion</h2>
+            <p style="font-size:20px;">Die Navigation erfolgt über das oben stehende Menü. Die aktuelle Auswahl wird dabei hervorgehoben und ist nicht erneut auswählbar. In der Image Classification App können User Bilder auf drei Weisen anwählen, die anschließend automatisch evaluiert und in der rechten Box dargestellt werden. Zum einen können sie Bilder über einen Button aus ihren eigenen Dateiordnern auswählen. Alternativ können sie diese per drag and drop in die dafür vorgesehene Fläche ziehen. Außerdem besteht die Möglichkeit, eines der Beispielbilder anzuklicken.</p>
+
+            <h2>2) Technisch</h2>
+            <p style="font-size:20px;">Die Website verwendet HTML, CSS und JavaScript für das Frontend. Für die Bildklassifikation wird die ml5.js-Bibliothek verwendet, die auf dem Machine-Learning-Framework TensorFlow.js basiert. Die p5.js-Bibliothek wird für die Erstellung von Canvas-Elementen verwendet. Zur Darstellung der Ergebnischarts wird die empfohlene plotly Bibliothek genutzt. Gehostet werden diese Webseiten über GitHub Pages. Der Quellcode befindet sich auf https://github.com/RobHeg/RobHeg.github.io. </p>
+
+            <h2>3) Fachlich</h2>
+            <p style="font-size:20px;">Bei Aufruf der Website wird das vortrainierte Modell ml5.js geladen. Wenn ein Benutzer ein Bild hochlädt oder auswählt, so wird dieses Bild an das Modell gesendet, das dann die Klassifikationsergebnisse zurückgibt. Dies geschieht im Quellcode über die Funktion processImage(file). Es ist zunächst sichergestellt, dass dieser Klasse nur Bilder übergeben werden. Die Bilder werden dann in ihrer Größe automatisch so angepasst, dass sie in dem dafür vorgesehenen quadratischen 500px Canvas auf der rechten Ergebnis-Seite der Anwendung Platz finden, ohne dabei die aspect ratio zu verändern. Anschließend wird das Bild über die Funktion gotResult evaluiert. Die Ergebnisse werden hierbei grafisch aufwendig aufbereitet, um die Ergebnisse in der richtigen Reihenfolge, visuell hervorgehobenem besten Ergebnis und automatisch umbrechenden Beschreibungen nach 3 Wörtern zu präsentieren. Einige ungewollte Zusatzfunktionen, wie einem möglichen Zoom in die Grafik werden zudem verhindert. Die gesamte restliche visuelle Darstellung erfolgt über das Stylesheet style.css; insbesondere werden die Beispielbildergrößen hier bei der Anzeige angepasst.</p>
+
         </div>
     </main>
   </body>
