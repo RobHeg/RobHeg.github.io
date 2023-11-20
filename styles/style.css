@@ -135,6 +135,7 @@ canvas{
     background-color: #f8f9fa;
     border-radius: 5px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid black;
 }
 
 #nav-menu a {
@@ -146,6 +147,16 @@ canvas{
     transition: background-color 0.3s ease;
     flex-grow: 1;
     text-align: center;
+    flex-basis: 0;
+}
+
+
+#nav-menu a.current-main {
+    background-color: #5e5e5e; /* Grey background color */
+    pointer-events: none; /* Disables hover/click events */
+    color: white;
+    border-bottom-left-radius: 0; /* Entfernt die abgerundeten Ecken unten links */
+    border-bottom-right-radius: 0; /* Entfernt die abgerundeten Ecken unten rechts */
 }
 
 #nav-menu a.current {
@@ -157,6 +168,11 @@ canvas{
 #nav-menu a:hover, #nav-menu a.active {
     background-color: #007bff;
     color: #fff;
+}
+
+.sub-menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
 }
 
 @media (max-width: 800px) {
