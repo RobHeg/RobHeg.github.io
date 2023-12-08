@@ -40,13 +40,23 @@
             </div>
             <div style="width: 20px">
             </div>
-            <div id="white-area" style="width: 600px;">
-                <button id="data-btn" class="button-green">Show Data</button>
-                <button id="model-btn" class="button-green">Show Model</button>
-                <button id="train-btn" class="button-green">Train Model</button>
-                <button id="predict-btn" class="button-green">Make Predictions</button>
-                <button id="save-btn" class="button-green">Save Model</button>
-                <button id="load-btn" class="button-green">Load Model</button>
+                <div id="white-area" style="width: 600px;">
+                    <button id="data-btn" class="button-green">Show Data</button>
+                    <button id="model-btn" class="button-green">Show Model</button>
+
+                    <div id="white-area">
+                        <h2>Create Your Own Model</h2>
+                        <table id="layer-table">
+                            <!-- Layers will be added here -->
+                        </table>
+                        <button id="add-layer-btn" class="button-green">Add Layer</button>
+                    </div>
+
+                    <button id="train-btn" class="button-green">Train Model</button>
+                    <button id="predict-btn" class="button-green">Make Predictions</button>
+                    <button id="save-btn" class="button-green">Save Model</button>
+                    <button id="upload-btn" class="button-green">Upload Model</button>
+                </div>
             </div>
         </div>
         <div id="white-area">             

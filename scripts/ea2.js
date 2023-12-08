@@ -4,7 +4,10 @@ console.log('Hello TensorFlow');
 
 /************************************************************** run ************************************************************************************************************************/
 let data, model, tensorData;
+let modelJson = null;
+let modelWeights = null;
 
+//whole program logic here in a nutshell
 async function run() {
   data = await loadData();
   model = createModelDisplay();
@@ -12,6 +15,7 @@ async function run() {
   predict(trainResults);
 }
 
+//get data to be trained on
 async function loadData() {
   data = await getData();
   if (!data) {
@@ -48,18 +52,25 @@ async function loadData() {
   return data;
 }
 
+//creates and displays model
 function createModelDisplay() {
   model = createModel();
+  displayModel(model);  
+  return model;
+}
+
+//display currently used model
+function displayModel(model) {
   const model_surface = document.getElementById('modeldisplay');
   if (!model_surface) {
     console.error('No HTML element found with id "modeldisplay"');
     return;
   }
-  tfvis.show.modelSummary(model_surface, model);
-  
-  return model;
+  model_surface.innerHTML = ''; // Clear the model display
+  tfvis.show.modelSummary(model_surface, model); // Display the new model
 }
 
+//train data
 async function train(model, data) {
   // Convert the data to a form we can use for training.
   tensorData = convertToTensor(data);
@@ -71,18 +82,26 @@ async function train(model, data) {
   return {model, data, tensorData};
 }
 
+//calls predictions
 function predict({model, data, tensorData}) {
   testModel(model, data, tensorData);
 }
 
+//asve model to download file
 async function saveModel(model) {
   const saveResult = await model.save('downloads://bestmodel');
-  console.log(saveResult);
+  console.log('Model saved successfully:', saveResult);
 }
 
-async function loadModel() {
-  const model = await tf.loadLayersModel('https://robheg.github.io/modelsave/bestmodel.json');
-  return model;
+//load model from save file
+async function loadModel(files) {
+  try {
+    model = await tf.loadLayersModel(tf.io.browserFiles(files));
+    console.log('Model loaded successfully');
+    return model;
+  } catch (error) {
+    console.error('Error loading model:', error);
+  }
 }
 
 
@@ -271,6 +290,42 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   await saveModel(model);
 });
 
-document.getElementById('load-btn').addEventListener('click', async () => {
-  model = await loadModel();
+document.getElementById('upload-btn').addEventListener('click', async () => {
+  // Prompt the user to select a .json file
+  const jsonUpload = document.createElement('input');
+  jsonUpload.type = 'file';
+  jsonUpload.accept = '.json';
+  jsonUpload.click();
+
+  jsonUpload.onchange = async () => {
+    modelJson = jsonUpload.files[0];
+    console.log('JSON file selected:', modelJson);
+
+    // Prompt the user to select a .bin file
+    const binUpload = document.createElement('input');
+    binUpload.type = 'file';
+    binUpload.accept = '.bin';
+    binUpload.click();
+
+    binUpload.onchange = async () => {
+      modelWeights = binUpload.files;
+      console.log('BIN file selected:', modelWeights);
+
+      // Load the model using the selected .json and .bin files
+      model = await loadModel([modelJson, ...modelWeights]);
+      displayModel(model); // Display the loaded model
+      console.log('Model display updated'); // Confirm that the model display has been updated
+
+      // Clear the training section
+      const trainingSection = document.getElementById('trainingdisplay');
+      if (trainingSection) {
+        trainingSection.innerHTML = '';
+        console.log('Training section cleared');
+      }
+
+      // Update the predictions
+      predict({model, data, tensorData});
+      console.log('Predictions updated');
+    };
+  };
 });
