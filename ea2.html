@@ -21,17 +21,33 @@
         <div class="sub-menu">
             <div></div> <!-- Leerer Platzhalter für nicht ausgewählte Elemente -->
             <div id="nav-menu">
-              <a href="ea2.html">ml5 Image Classification</a>
-              <a href="documentation.html" class="current">Documentation</a>
+              <a href="ea2.html" class="current">Regression</a>
+              <a href="documentation.html">Documentation</a>
               <a href="results-discussion.html">Results and Discussion</a>
             </div>
             <div></div> <!-- Leerer Platzhalter für nicht ausgewählte Elemente -->
         </div>
     </header>
     <main>
-        <div id="white-area">
-            <h2>EA2</h2>
-            <p style="font-size:20px;"> EA2</p>
+        <div id="horizontal-alignment">
+            <div id="white-area" style="width: 600px;">
+                <h2>EA2</h2>
+                <p style="font-size:20px;"> EA2</p>
+                <div id="datadisplay"></div>
+                <div id="modeldisplay"></div>
+                <div id="trainingdisplay"></div>
+                <div id="predictionsdisplay"></div>
+            </div>
+            <div style="width: 20px">
+            </div>
+            <div id="white-area" style="width: 600px;">
+                <button id="data-btn" class="button-green">Show Data</button>
+                <button id="model-btn" class="button-green">Show Model</button>
+                <button id="train-btn" class="button-green">Train Model</button>
+                <button id="predict-btn" class="button-green">Make Predictions</button>
+                <button id="save-btn" class="button-green">Save Model</button>
+                <button id="load-btn" class="button-green">Load Model</button>
+            </div>
         </div>
         <div id="white-area">             
             <p style="font-size:15px;">This website was created by Robin Hegenberg, Matr.Nr. 355386</p>
