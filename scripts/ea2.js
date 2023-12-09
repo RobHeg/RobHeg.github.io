@@ -4,8 +4,17 @@ console.log('Hello TensorFlow');
 
 /************************************************************** run ************************************************************************************************************************/
 let data, model, tensorData;
+let testdata;
 let modelJson = null;
 let modelWeights = null;
+let globalOptimizer = 'adam';
+let globalLearningRate = 0.01;
+let globalBatchSize = 32; 
+let globalEpochs = 50;
+let globalTrainingMSE;
+let globalTrainingLoss;
+let globalTestMSE;
+let globalTestLoss;
 
 //whole program logic here in a nutshell
 async function run() {
@@ -19,10 +28,6 @@ async function run() {
 
 //get data to be trained on   
 async function loadData(N, interval, func, noiseVariance) {
-  //data = await getData();
-  //const myFunc = x => (x + 0.8) * (x - 0.2) * (x - 0.3) * (x - 0.6);
-  //const myNoiseVariance = 0.1;
-  //data = await getFunctionData(1000, [-1, 1], myFunc, myNoiseVariance);
   data = await getFunctionData(N, interval, func, noiseVariance);
   if (!data) {
     console.error('No data returned from getFunctionData()');
@@ -39,23 +44,65 @@ async function loadData(N, interval, func, noiseVariance) {
     return;
   }
 
+  displayData(values);  // Display the data
+  
+  return data;
+}
+
+
+//split Data
+function splitData(splitRatio) {
+  // Combine data and testdata if they are not empty
+  let combinedData = [];
+  if (Array.isArray(data) && data.length) {
+    combinedData = [...combinedData, ...data];
+  }
+  if (Array.isArray(testdata) && testdata.length) {
+    combinedData = [...combinedData, ...testdata];
+  }
+  
+  // Shuffle the array
+  tf.util.shuffle(combinedData);
+
+  // Calculate the split index
+  const splitIdx = Math.floor(combinedData.length * splitRatio);
+
+  // Split the array into training data and test data
+  testdata = combinedData.slice(0, splitIdx);
+  data = combinedData.slice(splitIdx);
+}
+
+//display data
+function displayData(trainingValues, testValues) {
   // show data scatterplot
   const data_surface = document.getElementById('datadisplay');
   if (!data_surface) {
     console.error('No HTML element found with id "datadisplay"');
     return;
   }
+  
+  // Prepare the data for tfvis
+  const data = {values: [], series: []};
+  if (trainingValues && trainingValues.length > 0) {
+    data.values.push(trainingValues);
+    data.series.push('Training Data');
+  }
+  if (testValues && testValues.length > 0) {
+    data.values.push(testValues);
+    data.series.push('Test Data');
+  }
+  //console.log('Training Values:', trainingValues);
+  //console.log('Test Values:', testValues);
+
   tfvis.render.scatterplot(
     data_surface,
-    {values: values, series: ['original']},
+    data,
     {
       xLabel: 'X',
       yLabel: 'Y(X)',
       height: 300
     }
   );
-  
-  return data;
 }
 
 //creates and displays model
@@ -65,52 +112,14 @@ function createModelDisplay() {
   return model;
 }
 
-//display currently used model
-function displayModel(model) {
-  const model_surface = document.getElementById('modeldisplay');
-  if (!model_surface) {
-    console.error('No HTML element found with id "modeldisplay"');
-    return;
-  }
-  model_surface.innerHTML = ''; // Clear the model display
-
-  // Get the layers of the model
-  const layers = model.layers;
-
-  // Create a table to display the layer information
-  const table = document.createElement('table');
-
-  // Add table headers
-  const headers = document.createElement('tr');
-  headers.innerHTML = '<th>Layer</th><th>Units</th><th>Activation</th><th>Use Bias</th>';
-  table.appendChild(headers);
-
-  // Add a row for each layer
-  layers.forEach((layer, i) => {
-    const row = document.createElement('tr');
-
-    // Get the layer config
-    const config = layer.getConfig();
-
-    // Add the layer information to the row
-    row.innerHTML = `<td>Layer ${i+1}</td><td>${config.units}</td><td>${config.activation}</td><td>${config.useBias}</td>`;
-
-    // Add the row to the table
-    table.appendChild(row);
-  });
-
-  // Add the table to the model display
-  model_surface.appendChild(table);
-}
-
 //train data
-async function train(model, data, optimizer = 'adam', learningRate = 0.01, batchSize = 32, epochs = 50) {
+async function train(model, data) {
   // Convert the data to a form we can use for training.
   tensorData = convertToTensor(data);
   const {inputs, labels} = tensorData;
 
   // Pass the parameters to the trainModel function
-  await trainModel(model, inputs, labels, optimizer, learningRate, batchSize, epochs);
+  await trainModel(model, inputs, labels, globalOptimizer, globalLearningRate, globalBatchSize, globalEpochs);
   console.log('Done Training');
   
   return {model, data, tensorData};
@@ -121,7 +130,7 @@ function predict({model, data, tensorData}) {
   testModel(model, data, tensorData);
 }
 
-//asve model to download file
+//save model to download file
 async function saveModel(model) {
   const saveResult = await model.save('downloads://bestmodel');
   console.log('Model saved successfully:', saveResult);
@@ -234,7 +243,44 @@ function createModel() {
 
   return model;
 }
+/************************************************************** display model ************************************************************************************************************************/
+//display currently used model
+function displayModel(model) {
+  const model_surface = document.getElementById('modeldisplay');
+  if (!model_surface) {
+    console.error('No HTML element found with id "modeldisplay"');
+    return;
+  }
+  model_surface.innerHTML = ''; // Clear the model display
 
+  // Get the layers of the model
+  const layers = model.layers;
+
+  // Create a table to display the layer information
+  const table = document.createElement('table');
+
+  // Add table headers
+  const headers = document.createElement('tr');
+  headers.innerHTML = '<th>Layer</th><th>Units</th><th>Activation</th><th>Use Bias</th>';
+  table.appendChild(headers);
+
+  // Add a row for each layer
+  layers.forEach((layer, i) => {
+    const row = document.createElement('tr');
+
+    // Get the layer config
+    const config = layer.getConfig();
+
+    // Add the layer information to the row
+    row.innerHTML = `<td>Layer ${i+1}</td><td>${config.units}</td><td>${config.activation}</td><td>${config.useBias}</td>`;
+
+    // Add the row to the table
+    table.appendChild(row);
+  });
+
+  // Add the table to the model display
+  model_surface.appendChild(table);
+}
 
 /************************************************************** convert to tensor ************************************************************************************************************************/
 /**
@@ -288,9 +334,11 @@ async function trainModel(model, inputs, labels, optimizerName = 'adam', learnin
   console.log(`Batch Size: ${batchSize}`);
   console.log(`Epochs: ${epochs}`);  
 
+   // Display the training parameters
+  displayTrainingParameters(optimizerName, learningRate, batchSize, epochs);
+
     const optimizers = {
         'sgd': tf.train.sgd,
-        'momentum': tf.train.momentum,
         'adam': tf.train.adam,
         'adagrad': tf.train.adagrad,
         'adadelta': tf.train.adadelta,
@@ -318,6 +366,15 @@ async function trainModel(model, inputs, labels, optimizerName = 'adam', learnin
     return;
   }
 
+  // After training the model, get the final MSE and loss
+  const predictions = model.predict(inputs);
+  const loss = tf.losses.meanSquaredError(labels, predictions);
+  const mse = tf.metrics.meanSquaredError(labels, predictions);
+
+  // Convert MSE and loss to regular JavaScript numbers
+  globalTrainingLoss = await loss.dataSync()[0];
+  globalTrainingMSE = await mse.dataSync()[0];
+
   return await model.fit(inputs, labels, {
     batchSize,
     epochs,
@@ -329,19 +386,56 @@ async function trainModel(model, inputs, labels, optimizerName = 'adam', learnin
     )
   });
 }
+/************************************************************** display training parameters *******************************************************************************************************/
+function displayTrainingParameters(optimizer, learningRate, batchSize, epochs) {
+  const training_surface = document.getElementById('trainingdisplay');
+  if (!training_surface) {
+    console.error('No HTML element found with id "trainingdisplay"');
+    return;
+  }
+  training_surface.innerHTML = ''; // Clear the training display
 
+  // Create a table to display the training parameters
+  const table = document.createElement('table');
+
+  // Add table headers
+  const headers = document.createElement('tr');
+  headers.innerHTML = '<th>Parameter</th><th>Value</th>';
+  table.appendChild(headers);
+
+  // Add a row for each parameter
+  const parameters = {optimizer, learningRate, batchSize, epochs};
+  for (const [key, value] of Object.entries(parameters)) {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${key}</td><td>${value}</td>`;
+    table.appendChild(row);
+  }
+
+  // Add the table to the training display
+  training_surface.appendChild(table);
+}
 
 /************************************************************** test model ************************************************************************************************************************/
 function testModel(model, inputData, normalizationData) {
+  const {originalPoints, predictedPoints} = generatePredictions(model, inputData, normalizationData);
+
+  // Call the new function to display the data
+  displayDataGraph(originalPoints, predictedPoints);
+
+  // Display the final MSE and loss
+  displayResults(globalTrainingMSE, globalTrainingLoss);
+}
+
+//generate predictions
+function generatePredictions(model, inputData, normalizationData) {
   const {inputMax, inputMin, labelMin, labelMax} = normalizationData;
 
-  // Generate predictions for a uniform range of numbers between 0 and 1;
-  // We un-normalize the data by doing the inverse of the min-max scaling
-  // that we did earlier.
   const [xs, preds] = tf.tidy(() => {
+    const xsNorm = tf.tensor(inputData.map(d => d.x))  // use actual x-values
+      .sub(inputMin)
+      .div(inputMax.sub(inputMin));
 
-    const xsNorm = tf.linspace(0, 1, 100);
-    const predictions = model.predict(xsNorm.reshape([100, 1]));
+    const predictions = model.predict(xsNorm.reshape([inputData.length, 1]));
 
     const unNormXs = xsNorm
       .mul(inputMax.sub(inputMin))
@@ -351,19 +445,23 @@ function testModel(model, inputData, normalizationData) {
       .mul(labelMax.sub(labelMin))
       .add(labelMin);
 
-    // Un-normalize the data
     return [unNormXs.dataSync(), unNormPreds.dataSync()];
   });
-
 
   const predictedPoints = Array.from(xs).map((val, i) => {
     return {x: val, y: preds[i]}
   });
 
   const originalPoints = inputData.map(d => ({
-    x: d.x, y: d.y, //horsepower, mpg
+    x: d.x, y: d.y,
   }));
 
+  return {originalPoints, predictedPoints};
+}
+
+
+// displaying the data graph
+function displayDataGraph(originalPoints, predictedPoints) {
   const predictions_surface = document.getElementById('predictionsdisplay');
   if (!predictions_surface) {
     console.error('No HTML element found with id "predictionsdisplay"');
@@ -381,6 +479,82 @@ function testModel(model, inputData, normalizationData) {
   );
 }
 
+//displaying the result table for training
+function displayResults(mse, loss) {
+  const results_surface = document.getElementById('resultsdisplay');
+  if (!results_surface) {
+    console.error('No HTML element found with id "resultsdisplay"');
+    return;
+  }
+  results_surface.innerHTML = ''; // Clear the results display
+
+  // Create a table to display the results
+  const table = document.createElement('table');
+
+  // Add table headers
+  const headers = document.createElement('tr');
+  headers.innerHTML = '<th>Parameter</th><th>Value</th>';
+  table.appendChild(headers);
+
+  // Add a row for each result
+  const results = {mse, loss};
+  for (const [key, value] of Object.entries(results)) {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${key}</td><td>${value}</td>`;
+    table.appendChild(row);
+  }
+
+  // Add the table to the results display
+  results_surface.appendChild(table);
+}
+
+//display result graph, but for test data
+function displayTestDataGraph(trainingPoints, testPoints, predictedPoints) {
+  const tpredictions_surface = document.getElementById('test-predictionsdisplay');
+  if (!tpredictions_surface) {
+    console.error('No HTML element found with id "test-predictionsdisplay"');
+    return;
+  }
+  tfvis.render.scatterplot(
+    tpredictions_surface,
+    {values: [trainingPoints, testPoints, predictedPoints], series: ['Training Data', 'Test Data', 'Test Predictions']},
+    {
+      xLabel: 'X',
+      yLabel: 'Y(X)',
+      height: 300
+    }
+  );
+}
+
+//displaying the result table for testing
+function displayResultsTable() {
+  const results_surface = document.getElementById('test-resultsdisplay');
+  if (!results_surface) {
+    console.error('No HTML element found with id "test-resultsdisplay"');
+    return;
+  }
+  results_surface.innerHTML = ''; // Clear the results display
+
+  // Create a table to display the results
+  const table = document.createElement('table');
+
+  // Add table headers
+  const headers = document.createElement('tr');
+  headers.innerHTML = '<th>Parameter</th><th>Value</th><th>Difference to Test Results</th>';
+  table.appendChild(headers);
+
+  // Add a row for each result
+  const results = {MSE: globalTestMSE, Loss: globalTestLoss};
+  for (const [key, value] of Object.entries(results)) {
+    const row = document.createElement('tr');
+    const difference = key === 'MSE' ? Math.abs(globalTrainingMSE - globalTestMSE) : Math.abs(globalTrainingLoss - globalTestLoss);
+    row.innerHTML = `<td>${key}</td><td>${value}</td><td>${difference}</td>`;
+    table.appendChild(row);
+  }
+
+  // Add the table to the results display
+  results_surface.appendChild(table);
+}
 
 /************************************************************** html buttons ************************************************************************************************************************/
 document.getElementById('data-btn').addEventListener('click', async () => {
@@ -396,8 +570,43 @@ document.getElementById('predict-btn').addEventListener('click', () => {
   predict({model, data, tensorData});
 });
 
+/**************upload/download data**********************/
+document.getElementById('save-data-btn').addEventListener('click', saveDataToFile);
+document.getElementById('load-data-btn').addEventListener('click', loadDataFromFile);
 
-/************upload/download********************/
+async function saveDataToFile() {
+  const a = document.createElement('a');
+  a.download = 'data.json';
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type: 'application/json'}));
+  a.click();
+  console.log('Data saved successfully');
+}
+
+function loadDataFromFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.onchange = function(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      data = JSON.parse(event.target.result);
+      console.log('Data loaded successfully');
+      
+      // Prepare the values
+      const values = data.map(d => ({
+        x: d.x,
+        y: d.y,
+      }));
+
+      // Display the data
+      displayData(values);
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+/************upload/download models********************/
 document.getElementById('save-btn').addEventListener('click', async () => {
   await saveModel(model);
 });
@@ -442,10 +651,19 @@ document.getElementById('upload-btn').addEventListener('click', async () => {
   };
 });
 
+
 /*************model creator********************/
 function addLayer(units = 10, activation = 'relu', useBias = true) {
   // Get the layer table
   const layerTable = document.getElementById('layer-table');
+
+  // If there's at least one row, copy the values from the last row
+  if (layerTable.rows.length > 1) {
+    const lastRow = layerTable.rows[layerTable.rows.length - 1];
+    units = parseInt(lastRow.cells[0].firstChild.value);
+    activation = lastRow.cells[1].firstChild.value;
+    useBias = lastRow.cells[2].firstChild.firstChild.checked; 
+  }
 
   // Create a new row
   const row = document.createElement('tr');
@@ -462,7 +680,7 @@ function addLayer(units = 10, activation = 'relu', useBias = true) {
   // Create the 'activation' field
   const activationCell = document.createElement('td');
   const activationSelect = document.createElement('select');
-  ['elu', 'hardSigmoid', 'linear', 'relu', 'relu6', 'selu', 'sigmoid', 'softmax', 'softplus', 'softsign', 'tanh', 'swish', 'mish'].forEach(act => {
+  ['elu', 'hardSigmoid', 'linear', 'relu', 'relu6', 'selu', 'sigmoid', 'softmax', 'softplus', 'softsign', 'tanh'].forEach(act => {
     const option = document.createElement('option');
     option.value = act;
     option.text = act;
@@ -474,19 +692,19 @@ function addLayer(units = 10, activation = 'relu', useBias = true) {
   activationCell.appendChild(activationSelect);
   row.appendChild(activationCell);
 
-    // Create the 'use bias' field
-    const useBiasCell = document.createElement('td');
-    const useBiasLabel = document.createElement('label');
-    useBiasLabel.className = 'switch';
-    const useBiasCheckbox = document.createElement('input');
-    useBiasCheckbox.type = 'checkbox';
-    useBiasCheckbox.checked = useBias;
-    useBiasLabel.appendChild(useBiasCheckbox);
-    const useBiasSlider = document.createElement('span');
-    useBiasSlider.className = 'slider round';
-    useBiasLabel.appendChild(useBiasSlider);
-    useBiasCell.appendChild(useBiasLabel);
-    row.appendChild(useBiasCell);
+  // Create the 'use bias' field
+  const useBiasCell = document.createElement('td');
+  const useBiasLabel = document.createElement('label');
+  useBiasLabel.className = 'switch';
+  const useBiasCheckbox = document.createElement('input');
+  useBiasCheckbox.type = 'checkbox';
+  useBiasCheckbox.checked = useBias;
+  useBiasLabel.appendChild(useBiasCheckbox);
+  const useBiasSlider = document.createElement('span');
+  useBiasSlider.className = 'slider round';
+  useBiasLabel.appendChild(useBiasSlider);
+  useBiasCell.appendChild(useBiasLabel);
+  row.appendChild(useBiasCell);
 
   // Create the 'remove' button
   const removeCell = document.createElement('td');
@@ -523,9 +741,15 @@ document.getElementById('use-model-btn').addEventListener('click', async () => {
     const row = layerTable.rows[i];
 
     // Get the layer parameters from the row
-    const units = parseInt(row.cells[0].firstChild.value);
+    let units = parseInt(row.cells[0].firstChild.value);
     const activation = row.cells[1].firstChild.value;
     const useBias = row.cells[2].firstChild.checked;
+
+    // If this is the last row, set the units to 1
+    if (i === layerTable.rows.length - 1) {
+      units = 1;
+      row.cells[0].firstChild.value = 1;  // Update the table
+    }
 
     // Add a dense layer to the model with the given parameters
     if (i === 1) {
@@ -536,12 +760,10 @@ document.getElementById('use-model-btn').addEventListener('click', async () => {
     }
   }
 
-  // Add a final layer with 1 unit
-  newModel.add(tf.layers.dense({units: 1}));
-
   // Use the new model
   model = newModel;
   console.log('New model created:', model);
+
 
   displayModel(model); // Display the loaded model
   console.log('Model display updated'); // Confirm that the model display has been updated
@@ -558,6 +780,11 @@ document.getElementById('use-model-btn').addEventListener('click', async () => {
   if (predictionsSection) {
     predictionsSection.innerHTML = '';
     console.log('prediction section cleared due to new model');
+  }
+  const resultsSection = document.getElementById('resultsdisplay');
+  if (resultsSection) {
+    resultsSection.innerHTML = '';
+    console.log('result section cleared due to new model');
   }
 
   // Check if the 'auto-train-checkbox' is checked
@@ -589,6 +816,11 @@ document.getElementById('use-values-btn').addEventListener('click', async () => 
     predictionsSection.innerHTML = '';
     console.log('prediction section cleared due to new model');
   }
+  const resultsSection = document.getElementById('resultsdisplay');
+  if (resultsSection) {
+    resultsSection.innerHTML = '';
+    console.log('result section cleared due to new model');
+  }
 
   // Check if the 'auto-train-checkbox' is checked
   const autoTrainCheckbox = document.getElementById('auto-train-checkbox2');
@@ -606,19 +838,82 @@ document.getElementById('use-values-btn').addEventListener('click', async () => 
 /**************************model training****************/
 document.getElementById('train-btn').addEventListener('click', async () => {
     // Get the values from the HTML fields
-    const optimizer = document.getElementById('optimizer').value;
-    const learningRate = parseFloat(document.getElementById('learningRate').value);
-    const batchSize = parseInt(document.getElementById('batchSize').value);
-    const epochs = parseInt(document.getElementById('epochs').value);
+    globalOptimizer = document.getElementById('optimizer').value;
+    globalLearningRate = parseFloat(document.getElementById('learningRate').value);
+    globalBatchSize = parseInt(document.getElementById('batchSize').value);
+    globalEpochs = parseInt(document.getElementById('epochs').value);
 
-    console.log(`Button Click - Optimizer: ${optimizer}`);
-    console.log(`Button Click - Learning Rate: ${learningRate}`);
-    console.log(`Button Click - Batch Size: ${batchSize}`);
-    console.log(`Button Click - Epochs: ${epochs}`);
+    console.log(`Button Click - Optimizer: ${globalOptimizer}`);
+    console.log(`Button Click - Learning Rate: ${globalLearningRate}`);
+    console.log(`Button Click - Batch Size: ${globalBatchSize}`);
+    console.log(`Button Click - Epochs: ${globalEpochs}`);
 
     // Pass the values to the train function
-    const trainResults = await train(model, data, optimizer, learningRate, batchSize, epochs);
+    const trainResults = await train(model, data, globalOptimizer, globalLearningRate, globalBatchSize, globalEpochs);
 
     // Use the trained model to make predictions
     predict(trainResults);
+});
+
+
+/************************test data training data split************************************/
+function updateLabel(value) {
+  const label = document.getElementById('split-label');
+  label.textContent = `Test Dataset: ${value}%, Training Dataset: ${100-value}%`;
+}
+
+// Update the label when the page loads
+window.onload = function() {
+  updateLabel(document.getElementById('split-slider').value);
+};
+
+document.getElementById('split-slider').addEventListener('input', function() {
+  updateLabel(this.value);
+});
+
+document.getElementById('apply-split-btn').addEventListener('click', async function() {
+  const splitRatio = document.getElementById('split-slider').value / 100;  // Convert to a value between 0 and 1
+  
+  // Split data using the splitRatio
+  splitData(splitRatio);
+
+  // Prepare the values for displayData
+  const trainingValues = data.map(d => ({x: d.x, y: d.y}));
+  const testValues = testdata.map(d => ({x: d.x, y: d.y}));
+
+  // Display the data
+  displayData(trainingValues, testValues);
+
+  // Check the state of the checkbox
+  const autoTrainCheckbox = document.getElementById('auto-train-checkbox3');
+  if (autoTrainCheckbox.checked) {
+    // Pass the values to the train function
+    const trainResults = await train(model, data, globalOptimizer, globalLearningRate, globalBatchSize, globalEpochs);
+
+    // Use the trained model to make predictions
+    predict(trainResults);
+
+    // Generate predictions for the test data
+    const testResults = generatePredictions(model, testdata, tensorData);
+
+    // Calculate the MSE and loss for the test data
+    const testLabels = tf.tensor(testdata.map(d => d.y));
+    const testPredictions = tf.tensor(testResults.predictedPoints.map(p => p.y));
+    const testLoss = tf.losses.meanSquaredError(testLabels, testPredictions);
+    const testMSE = tf.metrics.meanSquaredError(testLabels, testPredictions);
+    console.log('Test Loss:', testLoss);
+
+    // Assign the MSE and loss to the global variables
+    globalTestLoss = await testLoss.dataSync()[0];
+    globalTestMSE = await testMSE.dataSync()[0];
+    console.log('Global Test Loss:', globalTestLoss);
+
+    // Display the results in a table
+    displayResultsTable();
+
+    // Display the test data and its predictions
+    displayTestDataGraph(trainingValues, testValues, testResults.predictedPoints);
+
+
+  }
 });

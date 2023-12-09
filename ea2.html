@@ -31,7 +31,7 @@
     <main>
         <div id="horizontal-alignment">
             <!--view things-->
-            <div>
+            <div> <!--horizontal-alignment here for wide screen-->
                 <div id="white-area" style="width: 600px;">
                     <h2>data display</h2>
                     <div id="datadisplay"></div>
@@ -45,8 +45,18 @@
                     <div id="trainingdisplay"></div>
                 </div>
                 <div id="white-area" style="width: 600px;">
-                    <h2>prediction results</h2>
+                    <h2>training Results</h2>
+                    <div id="resultsdisplay"></div>
+                    <div style="height:20px">
+                    </div>
                     <div id="predictionsdisplay"></div>
+                </div>
+                <div id="white-area" style="width: 600px;">
+                    <h2>test Results</h2>
+                    <div id="test-resultsdisplay"></div>
+                    <div style="height:20px">
+                    </div>
+                    <div id="test-predictionsdisplay"></div>
                 </div>
             </div>
             <div style="width: 20px">
@@ -55,6 +65,15 @@
             <div id="white-area" style="width: 600px;">
                 <button id="data-btn" class="button-green" style="display:none;">Show Data</button>
                 <button id="model-btn" class="button-green" style="display:none;">Show Model</button>
+
+                <!--save/upload data-->
+                <div id="white-area2"> 
+                  <div id="horizontal-alignment">
+                    <h2>Save/Load Data</h2>
+                    <button id="save-data-btn" class="button-green">Save Data</button>
+                    <button id="load-data-btn" class="button-green">Upload Data</button>
+                  </div>
+                </div>
 
                 <div id="white-area2"> <!--use own function -->
                     <h2>Use your own function</h2>
@@ -118,6 +137,32 @@
                     </div>
                 </div>
 
+                <!--split dataset-->
+                <div id="white-area2"> 
+                    <h2>Split Dataset</h2>
+                    <div id="horizontal-alignment">
+                        <label id="split-label" for="split-slider" style="width:250px"></label>
+                        <input type="range" id="split-slider"  min="0" max="99" value="0" oninput="updateLabel(value)" sytle="width:100%">
+                        <button id="apply-split-btn" class="button-green">Apply Changes</button>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <p style="font-size: 20px; margin-top: 10px; margin-right:20px;">Train after split</p>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-train-checkbox3" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!--save/upload model-->
+                <div id="white-area2"> 
+                    <div id="horizontal-alignment">
+                        <h2>Save/Load models</h2>
+                        <button id="save-btn" class="button-green">Save Model</button>
+                        <button id="upload-btn" class="button-green">Upload Model</button>
+                    </div>
+                </div>
+
                 <div id="white-area2"> <!--create own model -->
                     <h2>Create Your Own Model</h2>
                     <table id="layer-table">
@@ -151,7 +196,6 @@
                             <label for="optimizer">Choose optimizer:</label><br>
                             <select id="optimizer" name="optimizer" class="input-field">
                                 <option value="sgd">SGD</option>
-                                <option value="momentum">Momentum</option>
                                 <option value="adam" selected>Adam</option>
                                 <option value="adagrad">Adagrad</option>
                                 <option value="adadelta">Adadelta</option>
@@ -193,8 +237,6 @@
 
                 <!--others-->
                 <button id="predict-btn" class="button-green" style="display:none;">Make Predictions</button>
-                <button id="save-btn" class="button-green">Save Model</button>
-                <button id="upload-btn" class="button-green">Upload Model</button>
             </div>
         </div>
 
