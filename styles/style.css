@@ -50,11 +50,63 @@ canvas{
 	margin: auto;
 }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #BDBDBD;
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background-color: rgb(44,87,90); /*rgb(10,137,23);*/
+  color: white;
+}
+
+td {
+  width: 100%;
+  height: 50px;
+}
+
+td input, td select, td button {
+  width: 100%;
+  height: 100%;
+  font-size: 20px;
+}
+
+td select {
+  min-width: 200px;
+}
+
+.input-field {
+  min-height: 50px;
+  width: 100%;
+  font-size: 20px;
+}
+
 #white-area {
   background-color: rgb(253,253,253);
   border-radius: 5px;
   box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
   margin: 20px 0px;
+  padding: 20px;
+
+  display: flex; /* This will make the div a flex container */
+  flex-direction: column; /* This will make the child elements lay out in a column */
+  justify-content: center; /* This will vertically center the child elements */
+}
+
+#white-area2 {
+  background-color: rgb(253,253,253);
+  border: 1px solid #BDBDBD;
+  border-radius: 5px;
+  box-shadow: 0px 2px 4px rgba(0,0,0,0.2),
+              0px 4px 5px rgba(0,0,0,0.14),
+              0px 1px 10px rgba(0,0,0,0.12);
+  margin: 20px;
   padding: 20px;
 
   display: flex; /* This will make the div a flex container */
@@ -104,7 +156,7 @@ canvas{
   
   padding: 10px 20px;
   margin: 5px 20px;
-  width: 460px;
+  /*width: px;*/
   height: 100px;
 
   transition-duration: 0.2s;
@@ -195,6 +247,61 @@ canvas{
 .sub-menu {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
+}
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
 }
 
 @media (max-width: 800px) {
