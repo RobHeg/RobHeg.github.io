@@ -73,6 +73,17 @@
                     <button id="save-data-btn" class="button-green">Save Data</button>
                     <button id="load-data-btn" class="button-green">Upload Data</button>
                   </div>
+                  <div id="horizontal-alignment">
+                    <div style="display: flex; align-items: center; width:100%">
+                        <label class="switch">
+                            <input type="checkbox" id="testdata-apply-checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                        <div style="width:20px">
+                        </div>
+                        <p style="font-size: 20px; margin-top: 10px;">also apply for test data</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div id="white-area2"> <!--use own function -->
@@ -145,12 +156,23 @@
                         <input type="range" id="split-slider"  min="0" max="99" value="0" oninput="updateLabel(value)" sytle="width:100%">
                         <button id="apply-split-btn" class="button-green">Apply Changes</button>
                     </div>
-                    <div style="display: flex; align-items: center;">
-                        <p style="font-size: 20px; margin-top: 10px; margin-right:20px;">Train after split</p>
-                        <label class="switch">
-                            <input type="checkbox" id="auto-train-checkbox3" checked>
-                            <span class="slider round"></span>
-                        </label>
+                    <div id="horizontal-alignment">
+                        <div style="display: flex; align-items: center;">
+                            <p style="font-size: 20px; margin-top: 10px; margin-right:20px;">Train after split</p>
+                            <label class="switch">
+                                <input type="checkbox" id="auto-train-checkbox3" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div style="width:40px">
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <p style="font-size: 20px; margin-top: 10px; margin-right:20px;">Test after split</p>
+                            <label class="switch">
+                                <input type="checkbox" id="auto-test-checkbox" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -234,9 +256,30 @@
                     <button id="train-btn" class="button-green">Train Model</button>
                 </div>
 
+                <!--evaluate test data-->
+                <div id="white-area2"> 
+                    <div id="horizontal-alignment">
+                        <h2>testing</h2>
+                        <div style="width:40px">
+                        </div>
+                        <button id="predict-btn" class="button-green">Evaluate test data </br> (need to have data split)</button>
+                    </div>
+                </div>
 
-                <!--others-->
-                <button id="predict-btn" class="button-green" style="display:none;">Make Predictions</button>
+                <!--use examples-->
+                <div id="white-area2"> 
+                    <h2>examples</h2>
+                    <div id="horizontal-alignment">
+                        <select id="model-select" class="input-field">
+                          <option value="model1">underfitting</option>
+                          <option value="model2">perfect fit</option>
+                          <option value="model3">overfitting</option>
+                        </select>
+                        <div style="width:40px">
+                        </div>
+                        <button id="example-btn" class="button-green">use example</button>
+                    </div>
+                </div>
             </div>
         </div>
 

@@ -52,15 +52,29 @@ async function loadData(N, interval, func, noiseVariance) {
 
 //split Data
 function splitData(splitRatio) {
-  // Combine data and testdata if they are not empty
-  let combinedData = [];
-  if (Array.isArray(data) && data.length) {
-    combinedData = [...combinedData, ...data];
+  // Initialize data and testdata as empty arrays if they are undefined
+  data = data || [];
+  testdata = testdata || [];
+
+  // Combine data and testdata
+  let combinedData = [...data, ...testdata];
+
+  // Check if all the datapoints from data and testdata are in the combined dataset
+  let isAllDataPointsPresent = data.every(val => combinedData.includes(val)) && testdata.every(val => combinedData.includes(val));
+
+  if (!isAllDataPointsPresent) {
+    console.error("Not all data points from data and testdata are present in the combined dataset.");
+    return;
   }
-  if (Array.isArray(testdata) && testdata.length) {
-    combinedData = [...combinedData, ...testdata];
+
+  // Check if combinedData has only the datapoints from data and testdata
+  let hasOnlyDataPoints = combinedData.every(val => data.includes(val) || testdata.includes(val));
+
+  if (!hasOnlyDataPoints) {
+    console.error("combinedData has extra data points not present in data or testdata.");
+    return;
   }
-  
+
   // Shuffle the array
   tf.util.shuffle(combinedData);
 
@@ -131,9 +145,43 @@ function predict({model, data, tensorData}) {
 }
 
 //save model to download file
-async function saveModel(model) {
+/*async function saveModel(model) {
   const saveResult = await model.save('downloads://bestmodel');
   console.log('Model saved successfully:', saveResult);
+}*/
+async function saveModel(model) {
+  // Save the model in the usual way
+  const saveResult = await model.save('downloads://bestmodel');
+  console.log('Model saved successfully:', saveResult);
+
+  // Get the weights of the model
+  const weights = model.getWeights();
+
+  // Convert the weights to their underlying data synchronously
+  const weightsData = weights.map(tensor => tensor.dataSync());
+
+  // Convert the weights data to a Uint8Array
+  const weightsUint8Array = weightsData.map(data => new Uint8Array(data.buffer));
+
+  // Create a Blob from the Uint8Array
+  const blob = new Blob([weightsUint8Array], {type: 'application/octet-stream'});
+
+  // Create a URL for the Blob
+  const url = URL.createObjectURL(blob);
+
+  // Create a downloadable link for the file
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'weights.bin';
+
+  // Append the link to the body
+  document.body.appendChild(link);
+
+  // Programmatically click the link to start the download
+  link.click();
+
+  // Remove the link from the body
+  document.body.removeChild(link);
 }
 
 //load model from save file
@@ -415,7 +463,7 @@ function displayTrainingParameters(optimizer, learningRate, batchSize, epochs) {
   training_surface.appendChild(table);
 }
 
-/************************************************************** test model ************************************************************************************************************************/
+/************************************************************** test model - training ***********************************************************************************************************/
 function testModel(model, inputData, normalizationData) {
   const {originalPoints, predictedPoints} = generatePredictions(model, inputData, normalizationData);
 
@@ -426,41 +474,7 @@ function testModel(model, inputData, normalizationData) {
   displayResults(globalTrainingMSE, globalTrainingLoss);
 }
 
-//generate predictions
-function generatePredictions(model, inputData, normalizationData) {
-  const {inputMax, inputMin, labelMin, labelMax} = normalizationData;
-
-  const [xs, preds] = tf.tidy(() => {
-    const xsNorm = tf.tensor(inputData.map(d => d.x))  // use actual x-values
-      .sub(inputMin)
-      .div(inputMax.sub(inputMin));
-
-    const predictions = model.predict(xsNorm.reshape([inputData.length, 1]));
-
-    const unNormXs = xsNorm
-      .mul(inputMax.sub(inputMin))
-      .add(inputMin);
-
-    const unNormPreds = predictions
-      .mul(labelMax.sub(labelMin))
-      .add(labelMin);
-
-    return [unNormXs.dataSync(), unNormPreds.dataSync()];
-  });
-
-  const predictedPoints = Array.from(xs).map((val, i) => {
-    return {x: val, y: preds[i]}
-  });
-
-  const originalPoints = inputData.map(d => ({
-    x: d.x, y: d.y,
-  }));
-
-  return {originalPoints, predictedPoints};
-}
-
-
-// displaying the data graph
+// displaying the data graph for training
 function displayDataGraph(originalPoints, predictedPoints) {
   const predictions_surface = document.getElementById('predictionsdisplay');
   if (!predictions_surface) {
@@ -500,13 +514,73 @@ function displayResults(mse, loss) {
   const results = {mse, loss};
   for (const [key, value] of Object.entries(results)) {
     const row = document.createElement('tr');
-    row.innerHTML = `<td>${key}</td><td>${value}</td>`;
+    row.innerHTML = `<td>${key}</td><td>${value.toExponential(2)}</td>`; // Convert value to scientific notation with 2 decimal places
     table.appendChild(row);
   }
 
   // Add the table to the results display
   results_surface.appendChild(table);
 }
+/************************************************************** test model - testing ***********************************************************************************************************/
+
+//basic logic to do testdata evaluations, and display both the graph and the result table
+async function evaluateTestdata(trainingValues, testValues){
+    // Generate predictions for the test data
+    const testResults = generatePredictions(model, testdata, tensorData);
+
+    // Calculate the MSE and loss for the test data
+    const testLabels = tf.tensor(testdata.map(d => d.y));
+    const testPredictions = tf.tensor(testResults.predictedPoints.map(p => p.y));
+    const testLoss = tf.losses.meanSquaredError(testLabels, testPredictions);
+    const testMSE = tf.metrics.meanSquaredError(testLabels, testPredictions);
+    console.log('Test Loss:', testLoss);
+
+    // Assign the MSE and loss to the global variables
+    globalTestLoss = await testLoss.dataSync()[0];
+    globalTestMSE = await testMSE.dataSync()[0];
+    console.log('Global Test Loss:', globalTestLoss);
+
+    // Display the results in a table
+    displayTestResultsTable();
+
+    // Display the test data and its predictions
+    displayTestDataGraph(trainingValues, testValues, testResults.predictedPoints);
+}
+
+
+//generate predictions (for test dataset)
+function generatePredictions(model, inputData, normalizationData) {
+  const {inputMax, inputMin, labelMin, labelMax} = normalizationData;
+
+  const [xs, preds] = tf.tidy(() => {
+    const xsNorm = tf.tensor(inputData.map(d => d.x))  // use actual x-values
+      .sub(inputMin)
+      .div(inputMax.sub(inputMin));
+
+    const predictions = model.predict(xsNorm.reshape([inputData.length, 1]));
+
+    const unNormXs = xsNorm
+      .mul(inputMax.sub(inputMin))
+      .add(inputMin);
+
+    const unNormPreds = predictions
+      .mul(labelMax.sub(labelMin))
+      .add(labelMin);
+
+    return [unNormXs.dataSync(), unNormPreds.dataSync()];
+  });
+
+  const predictedPoints = Array.from(xs).map((val, i) => {
+    return {x: val, y: preds[i]}
+  });
+
+  const originalPoints = inputData.map(d => ({
+    x: d.x, y: d.y,
+  }));
+
+  return {originalPoints, predictedPoints};
+}
+
 
 //display result graph, but for test data
 function displayTestDataGraph(trainingPoints, testPoints, predictedPoints) {
@@ -527,7 +601,7 @@ function displayTestDataGraph(trainingPoints, testPoints, predictedPoints) {
 }
 
 //displaying the result table for testing
-function displayResultsTable() {
+function displayTestResultsTable() {
   const results_surface = document.getElementById('test-resultsdisplay');
   if (!results_surface) {
     console.error('No HTML element found with id "test-resultsdisplay"');
@@ -540,15 +614,16 @@ function displayResultsTable() {
 
   // Add table headers
   const headers = document.createElement('tr');
-  headers.innerHTML = '<th>Parameter</th><th>Value</th><th>Difference to Test Results</th>';
+  headers.innerHTML = '<th>Parameter</th><th>Value</th><th>Percentage Change </br> from Training Results</th>';
   table.appendChild(headers);
 
   // Add a row for each result
   const results = {MSE: globalTestMSE, Loss: globalTestLoss};
   for (const [key, value] of Object.entries(results)) {
     const row = document.createElement('tr');
-    const difference = key === 'MSE' ? Math.abs(globalTrainingMSE - globalTestMSE) : Math.abs(globalTrainingLoss - globalTestLoss);
-    row.innerHTML = `<td>${key}</td><td>${value}</td><td>${difference}</td>`;
+    const trainingValue = key === 'MSE' ? globalTrainingMSE : globalTrainingLoss;
+    const percentageChange = ((value - trainingValue) / trainingValue) * 100;
+    row.innerHTML = `<td>${key}</td><td>${value.toExponential(2)}</td><td>${percentageChange.toFixed(2)}%</td>`; // Convert value and percentageChange to scientific notation with 2 decimal places
     table.appendChild(row);
   }
 
@@ -566,23 +641,37 @@ document.getElementById('model-btn').addEventListener('click', () => {
   model = createModelDisplay();
 });
 
-document.getElementById('predict-btn').addEventListener('click', () => {
-  predict({model, data, tensorData});
-});
-
-/**************upload/download data**********************/
+/***********************************************************upload/download data**********************************************/
 document.getElementById('save-data-btn').addEventListener('click', saveDataToFile);
 document.getElementById('load-data-btn').addEventListener('click', loadDataFromFile);
 
 async function saveDataToFile() {
-  const a = document.createElement('a');
+  // Save data
+  let a = document.createElement('a');
   a.download = 'data.json';
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type: 'application/json'}));
   a.click();
   console.log('Data saved successfully');
+
+  // Get the checkbox
+  const checkbox = document.getElementById('testdata-apply-checkbox');
+
+  // Check if testdata is initialized, not empty, and the checkbox is checked
+  if (testdata && testdata.length > 0 && checkbox.checked) {
+    // Save testdata
+    a = document.createElement('a');
+    a.download = 'testdata.json';
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(testdata)], {type: 'application/json'}));
+    a.click();
+    console.log('Test data saved successfully');
+  }
 }
 
 function loadDataFromFile() {
+  // Get the checkbox
+  const checkbox = document.getElementById('testdata-apply-checkbox');
+
+  // Load data
   const input = document.createElement('input');
   input.type = 'file';
   input.onchange = function(event) {
@@ -592,21 +681,46 @@ function loadDataFromFile() {
       data = JSON.parse(event.target.result);
       console.log('Data loaded successfully');
       
-      // Prepare the values
-      const values = data.map(d => ({
+      // Prepare the data values
+      const dataValues = data.map(d => ({
         x: d.x,
         y: d.y,
       }));
 
-      // Display the data
-      displayData(values);
+      // Check if the checkbox is checked
+      if (checkbox.checked) {
+        // Load testdata
+        const testdataInput = document.createElement('input');
+        testdataInput.type = 'file';
+        testdataInput.onchange = function(event) {
+          const file = event.target.files[0];
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            testdata = JSON.parse(event.target.result);
+            console.log('Test data loaded successfully');
+
+            // Prepare the testdata values
+            const testdataValues = testdata.map(d => ({
+              x: d.x,
+              y: d.y,
+            }));
+
+            // Display both data and testdata
+            displayData(dataValues, testdataValues);
+          };
+          reader.readAsText(file);
+        };
+        testdataInput.click();
+      } else {
+        // Display only data
+        displayData(dataValues);
+      }
     };
     reader.readAsText(file);
   };
   input.click();
 }
-
-/************upload/download models********************/
+/************************************************************************* upload/download models ******************************/
 document.getElementById('save-btn').addEventListener('click', async () => {
   await saveModel(model);
 });
@@ -652,7 +766,7 @@ document.getElementById('upload-btn').addEventListener('click', async () => {
 });
 
 
-/*************model creator********************/
+/************************************************************************** model creator *************************************/
 function addLayer(units = 10, activation = 'relu', useBias = true) {
   // Get the layer table
   const layerTable = document.getElementById('layer-table');
@@ -728,7 +842,7 @@ document.getElementById('add-layer-btn').addEventListener('click', () => {
 addLayer();
 addLayer();
 
-//*************************use the model from creator***************/
+//***************************************************************** use the model from creator ****************************************/
 document.getElementById('use-model-btn').addEventListener('click', async () => {
   // Create a new sequential model
   const newModel = tf.sequential();
@@ -775,7 +889,7 @@ document.getElementById('use-model-btn').addEventListener('click', async () => {
     console.log('Training section cleared due to new model');
   }
 
-  //clear the predictions section
+  //clear the training predictions section
   const predictionsSection = document.getElementById('predictionsdisplay');
   if (predictionsSection) {
     predictionsSection.innerHTML = '';
@@ -785,6 +899,18 @@ document.getElementById('use-model-btn').addEventListener('click', async () => {
   if (resultsSection) {
     resultsSection.innerHTML = '';
     console.log('result section cleared due to new model');
+  }
+
+  //clear the test section
+  const testSection = document.getElementById('test-predictionsdisplay');
+  if (testSection) {
+    testSection.innerHTML = '';
+    console.log('test graph section cleared due to new model');
+  }
+  const tresultsSection = document.getElementById('test-resultsdisplay');
+  if (tresultsSection) {
+    tresultsSection.innerHTML = '';
+    console.log('test result section cleared due to new model');
   }
 
   // Check if the 'auto-train-checkbox' is checked
@@ -799,18 +925,18 @@ document.getElementById('use-model-btn').addEventListener('click', async () => {
   }
 });
 
-/**************************parse values from html to data set****************/
+/**************************************************************** parse values from html to data set ***********************************/
 document.getElementById('use-values-btn').addEventListener('click', async () => {
   await useHtmlValues();
 
-    // Clear the training section
+    // Clear the data display section
   const trainingSection = document.getElementById('trainingdisplay');
   if (trainingSection) {
     trainingSection.innerHTML = '';
     console.log('Training section cleared due to new model');
   }
 
-  //clear the predictions section
+  //clear the training section
   const predictionsSection = document.getElementById('predictionsdisplay');
   if (predictionsSection) {
     predictionsSection.innerHTML = '';
@@ -820,6 +946,18 @@ document.getElementById('use-values-btn').addEventListener('click', async () => 
   if (resultsSection) {
     resultsSection.innerHTML = '';
     console.log('result section cleared due to new model');
+  }
+
+  //clear the test section
+  const testSection = document.getElementById('test-predictionsdisplay');
+  if (testSection) {
+    testSection.innerHTML = '';
+    console.log('test graph section cleared due to new model');
+  }
+  const tresultsSection = document.getElementById('test-resultsdisplay');
+  if (tresultsSection) {
+    tresultsSection.innerHTML = '';
+    console.log('test result section cleared due to new model');
   }
 
   // Check if the 'auto-train-checkbox' is checked
@@ -835,7 +973,7 @@ document.getElementById('use-values-btn').addEventListener('click', async () => 
 });
 
 
-/**************************model training****************/
+/************************************************************** model training *************************************/
 document.getElementById('train-btn').addEventListener('click', async () => {
     // Get the values from the HTML fields
     globalOptimizer = document.getElementById('optimizer').value;
@@ -848,6 +986,20 @@ document.getElementById('train-btn').addEventListener('click', async () => {
     console.log(`Button Click - Batch Size: ${globalBatchSize}`);
     console.log(`Button Click - Epochs: ${globalEpochs}`);
 
+   //clear the test section
+  const testSection = document.getElementById('test-predictionsdisplay');
+  if (testSection) {
+    testSection.innerHTML = '';
+    console.log('test graph section cleared due to new model');
+  }
+  const tresultsSection = document.getElementById('test-resultsdisplay');
+  if (tresultsSection) {
+    tresultsSection.innerHTML = '';
+    console.log('test result section cleared due to new model');
+  }
+
+
+
     // Pass the values to the train function
     const trainResults = await train(model, data, globalOptimizer, globalLearningRate, globalBatchSize, globalEpochs);
 
@@ -856,7 +1008,7 @@ document.getElementById('train-btn').addEventListener('click', async () => {
 });
 
 
-/************************test data training data split************************************/
+/*********************************** test data training data split ********************************************************/
 function updateLabel(value) {
   const label = document.getElementById('split-label');
   label.textContent = `Test Dataset: ${value}%, Training Dataset: ${100-value}%`;
@@ -872,6 +1024,20 @@ document.getElementById('split-slider').addEventListener('input', function() {
 });
 
 document.getElementById('apply-split-btn').addEventListener('click', async function() {
+  
+  //clear the test section
+  const testSection = document.getElementById('test-predictionsdisplay');
+  if (testSection) {
+    testSection.innerHTML = '';
+    console.log('test graph section cleared due to new split');
+  }
+  const tresultsSection = document.getElementById('test-resultsdisplay');
+  if (tresultsSection) {
+    tresultsSection.innerHTML = '';
+    console.log('test result section cleared due to new split');
+  }
+
+
   const splitRatio = document.getElementById('split-slider').value / 100;  // Convert to a value between 0 and 1
   
   // Split data using the splitRatio
@@ -892,28 +1058,117 @@ document.getElementById('apply-split-btn').addEventListener('click', async funct
 
     // Use the trained model to make predictions
     predict(trainResults);
-
-    // Generate predictions for the test data
-    const testResults = generatePredictions(model, testdata, tensorData);
-
-    // Calculate the MSE and loss for the test data
-    const testLabels = tf.tensor(testdata.map(d => d.y));
-    const testPredictions = tf.tensor(testResults.predictedPoints.map(p => p.y));
-    const testLoss = tf.losses.meanSquaredError(testLabels, testPredictions);
-    const testMSE = tf.metrics.meanSquaredError(testLabels, testPredictions);
-    console.log('Test Loss:', testLoss);
-
-    // Assign the MSE and loss to the global variables
-    globalTestLoss = await testLoss.dataSync()[0];
-    globalTestMSE = await testMSE.dataSync()[0];
-    console.log('Global Test Loss:', globalTestLoss);
-
-    // Display the results in a table
-    displayResultsTable();
-
-    // Display the test data and its predictions
-    displayTestDataGraph(trainingValues, testValues, testResults.predictedPoints);
-
-
   }
+  
+  //auto-test
+  const autoTestCheckbox = document.getElementById('auto-test-checkbox');
+    if (autoTestCheckbox.checked) {
+        await evaluateTestdata(trainingValues, testValues);   
+    }
+
 });
+
+/**************************************** test data button    ****************************/
+document.getElementById('predict-btn').addEventListener('click', async () => {
+    // Check if testdata is defined and has data
+    if (testdata && Array.isArray(testdata) && testdata.length > 0) {
+        // Prepare the values for displayData
+        const trainingValues = data.map(d => ({x: d.x, y: d.y}));
+        const testValues = testdata.map(d => ({x: d.x, y: d.y}));
+        
+        // Call evaluateTestdata
+        await evaluateTestdata(trainingValues, testValues);   
+    }
+});
+
+/***************************************************************** using examples *********************************************************************/
+
+// model definition
+const models = {
+  'model1': {
+    json: {"modelTopology":{"class_name":"Sequential","config":{"name":"sequential_20","layers":[{"class_name":"Dense","config":{"units":8,"activation":"sigmoid","use_bias":true,"kernel_initializer":{"class_name":"VarianceScaling","config":{"scale":1,"mode":"fan_avg","distribution":"normal","seed":null}},"bias_initializer":{"class_name":"Zeros","config":{}},"kernel_regularizer":null,"bias_regularizer":null,"activity_regularizer":null,"kernel_constraint":null,"bias_constraint":null,"name":"dense_Dense69","trainable":true,"batch_input_shape":[null,1],"dtype":"float32"}},{"class_name":"Dense","config":{"units":4,"activation":"sigmoid","use_bias":true,"kernel_initializer":{"class_name":"VarianceScaling","config":{"scale":1,"mode":"fan_avg","distribution":"normal","seed":null}},"bias_initializer":{"class_name":"Zeros","config":{}},"kernel_regularizer":null,"bias_regularizer":null,"activity_regularizer":null,"kernel_constraint":null,"bias_constraint":null,"name":"dense_Dense70","trainable":true}},{"class_name":"Dense","config":{"units":3,"activation":"sigmoid","use_bias":true,"kernel_initializer":{"class_name":"VarianceScaling","config":{"scale":1,"mode":"fan_avg","distribution":"normal","seed":null}},"bias_initializer":{"class_name":"Zeros","config":{}},"kernel_regularizer":null,"bias_regularizer":null,"activity_regularizer":null,"kernel_constraint":null,"bias_constraint":null,"name":"dense_Dense71","trainable":true}},{"class_name":"Dense","config":{"units":1,"activation":"softplus","use_bias":true,"kernel_initializer":{"class_name":"VarianceScaling","config":{"scale":1,"mode":"fan_avg","distribution":"normal","seed":null}},"bias_initializer":{"class_name":"Zeros","config":{}},"kernel_regularizer":null,"bias_regularizer":null,"activity_regularizer":null,"kernel_constraint":null,"bias_constraint":null,"name":"dense_Dense72","trainable":true}}]},"keras_version":"tfjs-layers 2.0.0","backend":"tensor_flow.js"},"format":"layers-model","generatedBy":"TensorFlow.js tfjs-layers v2.0.0","convertedBy":null,"weightsManifest":[{"paths":["./bestmodel.weights.bin"],"weights":[{"name":"dense_Dense69/kernel","shape":[1,8],"dtype":"float32"},{"name":"dense_Dense69/bias","shape":[8],"dtype":"float32"},{"name":"dense_Dense70/kernel","shape":[8,4],"dtype":"float32"},{"name":"dense_Dense70/bias","shape":[4],"dtype":"float32"},{"name":"dense_Dense71/kernel","shape":[4,3],"dtype":"float32"},{"name":"dense_Dense71/bias","shape":[3],"dtype":"float32"},{"name":"dense_Dense72/kernel","shape":[3,1],"dtype":"float32"},{"name":"dense_Dense72/bias","shape":[1],"dtype":"float32"}]}]}, // replace with your JSON data
+    bin: new Uint8Array([195,152,241,192,51,206,83,64,86,221,247,192,236,188,199,192,26,16,3,193,218,189,119,192,150,164,156,192,56,201,2,193,221,214,51,63,209,127,51,192,57,176,184,62,197,2,76,191,235,223,118,62,218,14,90,64,70,3,128,64,171,25,161,63,109,213,158,191,229,222,133,192,245,8,20,192,106,213,106,63,221,130,30,191,55,109,242,191,119,27,47,64,165,175,25,192,132,220,19,192,230,64,143,192,26,190,10,192,8,112,209,63,148,172,158,191,78,166,97,192,174,92,198,190,156,111,9,63,64,140,71,192,251,66,141,192,235,21,27,192,91,130,14,64,195,62,22,64,232,231,201,61,131,134,104,192,95,131,252,191,39,181,27,64,206,179,193,63,48,184,153,192,145,158,9,192,136,191,130,192,19,46,187,192,131,97,14,192,57,87,43,64,70,18,97,63,5,255,58,61,179,215,216,62,122,55,3,192,225,100,16,64,123,20,38,64,195,246,200,191,114,98,203,191,96,205,31,191,170,212,35,64,7,174,99,192,234,203,138,192,33,10,59,64,155,252,71,191,163,144,231,191,36,60,253,62,235,6,9,191,170,179,144,190,74,217,62,190,1,180,151,191,83,235,161,191,60,252,208,63,16,244,177,62]) // replace with your BIN data
+  }
+};/*,
+  'model2': {
+    json: {"modelTopology":{...}}, // replace with your JSON data
+    bin: new Uint8Array([...]) // replace with your BIN data
+  },
+  'model3': {
+    json: {"modelTopology":{...}}, // replace with your JSON data
+    bin: new Uint8Array([...]) // replace with your BIN data
+  },
+  // add more models as needed
+};*/
+
+
+document.getElementById('example-btn').addEventListener('click', async function() {
+    // Get the selected example from the dropdown
+    const selectedExample = document.getElementById('model-select').value;
+
+    // Load the selected example model
+    await loadExampleModel(selectedExample);
+
+    displayModel(model); // Display the loaded model
+    console.log('Model display updated'); // Confirm that the model display has been updated
+
+    //clear the training section
+    const predictionsSection = document.getElementById('predictionsdisplay');
+    if (predictionsSection) {
+    predictionsSection.innerHTML = '';
+    console.log('prediction section cleared due to new model');
+    }
+    const resultsSection = document.getElementById('resultsdisplay');
+    if (resultsSection) {
+    resultsSection.innerHTML = '';
+    console.log('result section cleared due to new model');
+    }
+
+    //clear the test section
+    const testSection = document.getElementById('test-predictionsdisplay');
+    if (testSection) {
+    testSection.innerHTML = '';
+    console.log('test graph section cleared due to new split');
+    }
+    const tresultsSection = document.getElementById('test-resultsdisplay');
+    if (tresultsSection) {
+    tresultsSection.innerHTML = '';
+    console.log('test result section cleared due to new split');
+    }
+
+    // Update the predictions
+    //predict({model, data, tensorData});
+    //console.log('Predictions updated');
+});
+
+async function loadExampleModel(exampleName) {
+  try {
+    // Get the selected model from the examples
+    const selectedModel = models[exampleName];
+    if (selectedModel) {
+      // Create a Blob from the Uint8Array
+      const blob = new Blob([selectedModel.bin], {type: 'application/octet-stream'});
+
+      // Create a new File object from the Blob
+      const binFile = new File([blob], 'model.bin');
+
+      // Modify the weightsManifest in the model's JSON data
+      selectedModel.json.weightsManifest[0].paths = ['model.bin'];
+
+      // Create a Blob from the JSON
+      const jsonBlob = new Blob([JSON.stringify(selectedModel.json)], {type: 'application/json'});
+
+      // Create a new File object from the Blob
+      const jsonFile = new File([jsonBlob], 'model.json');
+
+      // Load the model
+      model = await tf.loadLayersModel(tf.io.browserFiles([jsonFile, binFile]));
+      console.log('Model loaded successfully');
+      return model;
+    } else {
+      console.error('Example not found:', exampleName);
+    }
+  } catch (error) {
+    console.error('Error loading model:', error);
+  }
+}
