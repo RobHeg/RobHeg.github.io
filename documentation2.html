@@ -77,10 +77,12 @@ Im examples Menü können vortrainierte Modelle - falls eingestellt auch mit den
             </p>
 
             <h2>2) Technisch</h2>
-            <p style="font-size:20px;">Die Website verwendet HTML, CSS und JavaScript für das Frontend und das <a href="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js">tensorflow framework</a>. Gehostet werden diese Webseiten über <a href="https://pages.github.com/">GitHub Pages</a>. Der Quellcode befindet sich auf <a href="https://github.com/RobHeg/RobHeg.github.io">https://github.com/RobHeg/RobHeg.github.io</a>.</p>
+            <p style="font-size:20px;">Die Website verwendet HTML, CSS und JavaScript für das Frontend und zwei frameworks von <a href="https://www.tensorflow.org/">tensorflow</a>. Gehostet werden meine Webseiten über <a href="https://pages.github.com/">GitHub Pages</a>. Der Quellcode befindet sich auf <a href="https://github.com/RobHeg/RobHeg.github.io">https://github.com/RobHeg/RobHeg.github.io</a>. Nichts weiter.</p>
 
             <h2>3) Fachlich</h2>
-            <p style="font-size:20px;">Die fachliche Dokumentation befindet sich im Quellcode. Der Quellcode befindet sich auf <a href="https://github.com/RobHeg/RobHeg.github.io">https://github.com/RobHeg/RobHeg.github.io</a></p>
+            <p style="font-size:20px;">Die genaue fachliche Dokumentation zu allen Funktionalitäten befindet sich im Quellcode. Oftmals werden asynchrone Funktionen benutzt, die von Button Event Listenern aufgerufen werden (Beispiel: document.getElementById('save-btn').addEventListener('click', async () => {
+  await saveModel(model);
+});}). Schwieriger war es, die vortrainierten Modelle per einfachem Klick anzeigen zu lassen. Diese konnten dafür nicht aus einer Datei heraus aufgerufen werden (Web policy), sondern sind jetzt hard codiert im Quellcode hinterlegt, wobei die unterschiedlichen Formate (json uint8-bin) noch jeweils wieder in passende Modell- oder Daten-Formate umkonvertiert werden (Normale bin Files enthalten beispielsweise Sonderzeichen, die so nicht im Quellcode hinterlegt werden müssen, ich habe also die Möglichkeit eingebaut, diese im Uint8-Format downzuloaden und kann diese dann im Quellcode hinterlegen, von wo aus sie wieder konvertiert werden. Dropdown-Menüs für Optimizer und Aktivierungsfunktion beinhalten einfach alles, was ich bei tensorflow finden konnte, und was beim Testen funktioniert hat. Ursprünglich hat alles über das Nachprogrammieren von diesem Tutorial angefangen; das Trainieren basiert darauf, allerdings habe ich den visor noch an entsprechende html-Elemente gebunden: <a href="https://www.tensorflow.org/js/tutorials/training/linear_regression">tensorflow linear regression tutorial</a> Der Quellcode befindet sich auf <a href="https://github.com/RobHeg/RobHeg.github.io/blob/main/scripts/ea2.js">https://github.com/RobHeg/RobHeg.github.io</a></p>
 
         </div>
     </main>
