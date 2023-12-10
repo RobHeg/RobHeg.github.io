@@ -1,0 +1,88 @@
+﻿<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>My DEEP Learning webpage</title>
+    <link href="styles/style.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Zilla+Slab:400,700|Open+Sans" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js"></script>
+  </head>
+  <body>
+    <header>
+        <h1> DEEP Learning Excercise Website </h1>
+        <div id="nav-menu">
+          <a href="index.html">EA1 - ml5 Image Classification</a>
+          <a href="ea2.html" class="current-main">EA2 - Regression </a>
+          <a href="ea3.html">EA3 - Language Model mit RNN</a>
+        </div>
+        <div class="sub-menu">
+            <div></div> <!-- Leerer Platzhalter für nicht ausgewählte Elemente -->
+            <div id="nav-menu">
+              <a href="ea2.html">Regression</a>
+              <a href="documentation2.html" class="current">Documentation</a>
+              <a href="results-discussion2.html">Results and Discussion</a>
+            </div>
+            <div></div> <!-- Leerer Platzhalter für nicht ausgewählte Elemente -->
+        </div>
+    </header>
+    <main>
+        <div id="white-area">
+            <h2>1) Interaktion</h2>
+            <p style="font-size:20px;">
+Auf der linken Seite befinden sich Darstellungen, auf der rechten Seite Interaktionsmöglichkeiten.
+            </p>
+            <p style="font-size:20px;">
+Das data display zeigt den aktuellen Datensatz an. Sind sowohl Trainings- als auch Testdaten vorhanden, so werden diese in unterschiedlichen Farben dargestellt.
+            </p>
+            <p style="font-size:20px;">
+In den model specifications werden die Spezifikationen des aktuell zum Training verwendeten Modells dargestellt. Der Layername, Die Anzahl der Units, die Art der Aktivierungsfunktion und ob Bias verwendet wurde, sind hier tabellarisch dargestellt.
+            </p>
+            <p style="font-size:20px;">
+Im model training werden zunächst die Parameter des Modelltrainings tabellarisch dargestellt: Optimizer, learning Rate (des Optimizers), batch size, und Anzahl der Epochen. In den beiden darauffolgenden Graphen können loss und mse (mean squared error) beim Training in Echtzeit beobachtet werden.
+            </p>
+            <p style="font-size:20px;">
+In den training results wird das Ergebnis des trainierten Modells auf den Trainingsdaten dargestellt. Finale Mse- (mean squared error) und loss-Werte werden in der Tabelle hervorgehoben. Außerdem werden die Predictions gegenüber den trainingsdaten in der Grafik dargestellt.
+            </p>
+            <p style="font-size:20px;">
+In den test results werden die Ergebnisse gezeigt, die bei der Evaluation mit den Testdaten (nicht: Trainingsdaten) erzeugt wurden. Hierbei wird auch die prozentuale Veränderung der mse- und loss-Werten des Testens auf den Testdaten gegenüber den mse- und loss-Werten des Testens auf den Trainingsdaten dargestellt. Diese Option ist nur verfügbar, wenn es auch einen Testdatensatz gibt, der mittels split dataset auch erzeugt werden kann.
+            </p>
+            <p style="font-size:20px;">
+Auf der rechten Seite befinden sich alle Interaktionsmöglichkeiten:
+            </p>
+            <p style="font-size:20px;">
+Im Save/Load Data Abschnitt können - abhängig vom Checkbox-Regler - nur der Trainingsdatensatz oder aber sowohl Trainingsdatensatz als auch Testdatensatz heruntergeladen und lokal abgespeichert werden. Ebenfalls können durch den Upload-Data-Button solche Dateien ausgewählt werden, um nur den Trainingsdatensatz oder - falls der Checkbox-Regler aktiviert ist - erst den Trainingsdatensatz und danach den Testdatensatz hochzuladen. Beim Upload wird das data display automatisch aktualisiert und sonstige Displays deaktiviert, weil diese nicht mehr zum Datensatz passen.
+            </p>
+            <p style="font-size:20px;">
+Über das Use your own Function-Menü kann eine einfache Funktion (von x) (komplexe Dinge wie sin funktionieren nicht) eingegeben werden, die dann als Datensatz fungiert. Diese kann verrauscht werden (falls nicht gewollt, setzt Gaussian Noise Variance auf 0). Außerdem kann ausgewählt werden, wie viele Datenpunkte erzeugt werden sollen, und in welchem Intervall diese liegen. Zudem kann ausgewählt werden, ob die Datenpunkte gleichmäßig im Intervall verteilt, komplett zufällig im Intervall, oder randomly equally distributed sein sollen. Random Equal Distribution bedeutet, dass zunächst abhängig von der Anzahl der zu erstellenden Datenpunkte gleichmäßig verteilte Intervalle gebildet werden (ein Intervall pro Datenpunkt), die Datenpunkte dann aber zufällig in ihrem jeweiligen Intervall liegen. Zu den so erstellten x-Werten werden über die Funktion passende y-Werte gebildet und als Paar als Datensatz hinterlegt. Über den Use these values-button finden die Einstellungen Anwendung und werden im data display angezeigt. Außerdem kann noch ausgewählt werden, ob daraufhin mit den neuen Daten sofort trainiert werden soll (mit entsprechenden Anzeigen, auf Grundlage der zuletzt verwendeten Trainingsparameter).
+            </p>
+            <p style="font-size:20px;">
+Im Split Dataset Menü können die vorhandenen Trainings- und Testdatensätze (falls nicht vorhanden werden nur die vorhandenen verwendet) zufällig neu in Test- und Trainingsdatensatz verteilt werden, abhängig von der durch den Schieberegler eingestellten Ratio. Dies ermöglicht auch das Testen im test results display, da dieses einen Testdatensatz benötigt. Zur Anwendung muss der Apply Changes-Button gedrückt werden. Dieser trainiert und/oder testet gegebenenfalls auch noch gleich mit, sofern dies ausgewählt wurde.
+            </p>
+            <p style="font-size:20px;">
+Über das Save/Load models Menü können Modelle mit ihren Trainingsparametern lokal gedownloaded oder auch geuploaded werden.
+            </p>
+            <p style="font-size:20px;">
+Im Create Your Own Model Menü können eigene Modellkonfigurationen erstellt werden. Dazu könne Layer über den Button Add Layer hinzugefügt oder in der Tabellenansicht über den jeweiligen Remove Button entfernt werden. Für jeden Layer können die Anzahl der Units, die Art der Aktivierungsfunktion und ob der Layer Bias verwenden soll, eingestellt werden. Über den Use This Model-Button wird das eingestellte Modell benutzt und - falls angehakt - auch gleich mittrainiert. Die Anzahl der Units im letzten Layer wird gegebenenfalls automatisch angepasst, damit es zu keinen Fehlern kommt. Auf der linken Seite verschwinden dann test-Menüs, weil diese nicht mehr zum Modell passen.
+            </p>
+            <p style="font-size:20px;">
+Im Apply training Menü können Parameter für das Training verwendet werden: Optimizer, Learning rate, Batch Size und Epochs. Über den Train Model-Button wird das Modell mit den Einstellungen trainiert.
+            </p>
+            <p style="font-size:20px;">
+Falls nur auf den Testdaten getestet werden soll (->test result display), geschieht das über den Evaluate test data button. Dies funktioniert natürlich nur, falls ein entsprechender Testdatensatz vorhanden ist.
+            </p>
+            <p style="font-size:20px;">
+Im examples Menü können vortrainierte Modelle - falls eingestellt auch mit den dazugehörigen Datensätzen zu Trainings- und Testdatensatz - angeschaut werden. Dazu einfach das Beispiel (underfitting, perfect fit, overfitting) auswählen und den use examples-Button drücken. Im Hintergrund sind die Beispiele leider sehr aufwendig hard codiert im Coding hinterlegt, da keine Daten von anderen Files ohne weitere Bestätigungen hochgeladen werden dürfen.
+            </p>
+
+            <h2>2) Technisch</h2>
+            <p style="font-size:20px;">Die Website verwendet HTML, CSS und JavaScript für das Frontend und das <a href="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js">tensorflow framework</a>. Gehostet werden diese Webseiten über <a href="https://pages.github.com/">GitHub Pages</a>. Der Quellcode befindet sich auf <a href="https://github.com/RobHeg/RobHeg.github.io">https://github.com/RobHeg/RobHeg.github.io</a>.</p>
+
+            <h2>3) Fachlich</h2>
+            <p style="font-size:20px;">Die fachliche Dokumentation befindet sich im Quellcode. Der Quellcode befindet sich auf <a href="https://github.com/RobHeg/RobHeg.github.io">https://github.com/RobHeg/RobHeg.github.io</a></p>
+
+        </div>
+    </main>
+  </body>
+</html>
