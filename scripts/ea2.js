@@ -1102,43 +1102,70 @@ const models = {
 };*/
 
 
+
+
+const datasets = {
+  'model1': {
+    data: [{"x":0.15513959817463616,"y":-0.10758602798163083},{"x":-0.7407496752404291,"y":0.4000557762846294},{"x":-0.8954711551285627,"y":-0.14005710910788452},{"x":0.7357743734244797,"y":-0.030636808564955778},{"x":0.5605756647896761,"y":0.07302021236604998},{"x":0.20612538866623167,"y":-0.20140427782280515},{"x":0.09674772322631542,"y":-0.030081684976050876},{"x":-0.09910920039562958,"y":-0.015956862095251677}], // example data for model1
+    testdata: [{"x":-0.5955330901669321,"y":-0.33633103484641413},{"x":-0.26155113324750334,"y":-0.5877016331629459},{"x":0.8763257051545092,"y":-0.24126968039583235}] // example test data for model1
+  }
+};
+
+async function loadExampleData(exampleName) {
+  // Get the checkbox
+  const checkbox = document.getElementById('example-data-checkbox');
+
+  // Check if the checkbox is checked
+  if (checkbox.checked) {
+    // Get the selected dataset from the examples
+    const selectedDataset = datasets[exampleName];
+    if (selectedDataset) {
+      // Load the data and testdata
+      data = selectedDataset.data;
+      testdata = selectedDataset.testdata;
+      console.log('Example datasets loaded successfully');
+    } else {
+      console.error('Example dataset not found:', exampleName);
+    }
+  }
+}
+
 document.getElementById('example-btn').addEventListener('click', async function() {
-    // Get the selected example from the dropdown
-    const selectedExample = document.getElementById('model-select').value;
+  // Get the selected example from the dropdown
+  const selectedExample = document.getElementById('model-select').value;
 
-    // Load the selected example model
-    await loadExampleModel(selectedExample);
+  // Load the selected example model
+  await loadExampleModel(selectedExample);
 
-    displayModel(model); // Display the loaded model
-    console.log('Model display updated'); // Confirm that the model display has been updated
+  // Load the example datasets
+  await loadExampleData(selectedExample);
 
-    //clear the training section
-    const predictionsSection = document.getElementById('predictionsdisplay');
-    if (predictionsSection) {
+  displayModel(model); // Display the loaded model
+  console.log('Model display updated'); // Confirm that the model display has been updated
+
+  // Clear the training section
+  const predictionsSection = document.getElementById('predictionsdisplay');
+  if (predictionsSection) {
     predictionsSection.innerHTML = '';
     console.log('prediction section cleared due to new model');
-    }
-    const resultsSection = document.getElementById('resultsdisplay');
-    if (resultsSection) {
+  }
+  const resultsSection = document.getElementById('resultsdisplay');
+  if (resultsSection) {
     resultsSection.innerHTML = '';
     console.log('result section cleared due to new model');
-    }
+  }
 
-    //clear the test section
-    const testSection = document.getElementById('test-predictionsdisplay');
-    if (testSection) {
+  // Clear the test section
+  const testSection = document.getElementById('test-predictionsdisplay');
+  if (testSection) {
     testSection.innerHTML = '';
     console.log('test graph section cleared due to new split');
-    }
-    const tresultsSection = document.getElementById('test-resultsdisplay');
-    if (tresultsSection) {
+  }
+  const tresultsSection = document.getElementById('test-resultsdisplay');
+  if (tresultsSection) {
     tresultsSection.innerHTML = '';
     console.log('test result section cleared due to new split');
-    }
-
-    // Update the predictions
-    //predict({model, data, tensorData});
-    //console.log('Predictions updated');
+  }
 });
 
 async function loadExampleModel(exampleName) {
@@ -1170,5 +1197,42 @@ async function loadExampleModel(exampleName) {
     }
   } catch (error) {
     console.error('Error loading model:', error);
+  }
+}
+
+async function loadExampleData(exampleName) {
+  // Get the selected dataset from the examples
+  const selectedDataset = datasets[exampleName];
+  if (selectedDataset) {
+    // Load the data
+    data = selectedDataset.data;
+    console.log('Data loaded successfully');
+
+    // Prepare the data values
+    const dataValues = data.map(d => ({
+      x: d.x,
+      y: d.y,
+    }));
+
+    // Check if testdata exists
+    if (selectedDataset.testdata && selectedDataset.testdata.length > 0) {
+      // Load the testdata
+      testdata = selectedDataset.testdata;
+      console.log('Test data loaded successfully');
+
+      // Prepare the testdata values
+      const testdataValues = testdata.map(d => ({
+        x: d.x,
+        y: d.y,
+      }));
+
+      // Display both data and testdata
+      displayData(dataValues, testdataValues);
+    } else {
+      // Display only data
+      displayData(dataValues);
+    }
+  } else {
+    console.error('Example dataset not found:', exampleName);
   }
 }
