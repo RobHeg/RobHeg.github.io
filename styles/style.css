@@ -166,6 +166,53 @@ td select {
   background-color: rgb(72,82,92);
 }
 
+#chat-input {
+  font-family: 'Roboto', sans-serif;
+  font-size: 20px;
+  
+  border: none;
+  box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
+  margin-bottom: 5px;
+
+  padding: 10px 20px;
+  width: 500px; 
+  height: 50px;
+  resize: none; /* Prevent the user from changing the size of the textarea */
+
+  vertical-align: middle;
+}
+
+#chat-history {
+  font-family: 'Roboto', sans-serif;
+  font-size: 15px;
+  
+  border: none;
+  box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
+  margin: 20px 5px;
+  margin-right: 20px;
+
+  padding: 10px 20px;
+  width: 606px; 
+  resize: none; /* Prevent the user from changing the size of the textarea */
+
+  vertical-align: middle;
+}
+
+#chat-history p {
+  white-space: pre-wrap; /*allows line break formats*/
+  word-break: break-word; /* breaks very long words into multiple lines*/
+}
+
+#chat-spacing {
+  display: flex;
+  flex-direction: column-reverse;
+
+  height: calc(100vh - 120px);
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 #dropzone {
     width: 416px;
     height: 416px;
