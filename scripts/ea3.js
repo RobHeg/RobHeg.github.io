@@ -37,3 +37,12 @@ function sendMessage() {
         input.focus();
     }
 }
+
+//ea3.js
+fetch('https://robheg.github.io/scripts/oliver_twist.txt')
+    .then(response => response.text())
+    .then(data => {
+        // Verwenden Sie die Daten hier
+        console.log(data);
+    })
+    .catch(error => console.error('Fehler beim Laden der Datei:', error));
