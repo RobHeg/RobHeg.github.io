@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css?family=Zilla+Slab:400,700|Open+Sans" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   </head>
   <body>
     <header>
@@ -29,7 +30,17 @@
     </header>
     <main>
         <div id="horizontal-alignment">
-            <div>    
+            <div id="white-area" style="height: calc(100vh); width: 500px;"> 
+                <h2>RNN predictions</p>
+                <div id="RNN-predictions">
+                <!-- this is where the plotly graph will appear by code -->
+                </div>
+            </div>
+
+            <div style="width: 20px;">
+            </div>
+
+            <div id="user-input" style="flex-direction: none;">    
                 <div id="chat-spacing">
                     <!-- This is where id="chat-history" elements will appear by code-->
                 </div>
@@ -38,27 +49,42 @@
                     <button id="send-button" class="button-green" style="height:70px; margin-right:5px;">Enter</button>
                 </div>
             </div>
+
+            <div style="width: 20px;">
+            </div>
+
+            <div id="white-area" style="height: calc(100vh); width: 500px;"> 
+                <h2>FFNN predictions</p>
+                <div id="FFNN-predictions">
+                    <!-- this is where the plotly graph will appear by code -->
+                </div>
+            </div>
         </div>
         
-        <!--save/upload data-->
-        <div id="white-area2"> 
+        <!--dev tools data-->
+        <div id="white-area" style="display:none;"> 
             <div id="horizontal-alignment">
-            <h2>Dev Tools</h2>
-            <button id="save-data-btn" class="button-green">Save Data</button>
-            <button id="load-model-btn" class="button-green">Load Data</button>
-            <button id="train-model-btn" class="button-green">Train RNN model</button>
-            </div>
-            <!--<div id="horizontal-alignment">
-            <div style="display: flex; align-items: center; width:100%">
-                <label class="switch">
-                    <input type="checkbox" id="testdata-apply-checkbox" checked>
-                    <span class="slider round"></span>
-                </label>
-                <div style="width:20px">
+                <h2>Dev Tools</h2>
+                <button id="save-data-btn" class="button-green">Save Data</button>
+                <button id="load-model-btn" class="button-green">Load Data</button>
+                <button id="train-RNNmodel-btn" class="button-green">Train RNN model</button>
+                <button id="train-FFNNmodel-btn" class="button-green">Train FFNN model</button>
+
+                <div id="horizontal-alignment">
+                    <div style="width:20px">
+                    </div>
+                    <p style="font-size: 20px; margin-top: 10px;">RNN</p>
+                    <div style="width:20px">
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="model-type" unchecked title="choose-model-type" label="model-type-switch">
+                        <span class="slider round"></span>
+                    </label>
+                    <div style="width:20px">
+                    </div>
+                    <p style="font-size: 20px; margin-top: 10px;">FFNN</p>
                 </div>
-                <p style="font-size: 20px; margin-top: 10px;">also apply for test data</p>
             </div>
-            </div>-->
         </div>
 
         <div id="white-area">             
