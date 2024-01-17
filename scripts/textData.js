@@ -1,10 +1,10 @@
-/***************************************************************************** text laden ***********************************************************************/
+ï»¿/***************************************************************************** text laden ***********************************************************************/
 /*function replaceSpecialCharacters(text) {
     let replacements = {
-        'ä': '\\u00E4',
-        'ö': '\\u00F6',
-        'ü': '\\u00FC',
-        'ß': '\\u00DF'
+        'Ã¤': '\\u00E4',
+        'Ã¶': '\\u00F6',
+        'Ã¼': '\\u00FC',
+        'ÃŸ': '\\u00DF'
     };
 
     for (let char in replacements) {
@@ -15991,7 +15991,7 @@ function loadTextData() {
 
         --, Zur linken Hand. Novellen.
 
-        =Prévost=, Manon Lescaut. Die Geschichte einer Liebe.
+        =PrÃ©vost=, Manon Lescaut. Die Geschichte einer Liebe.
 
         =Scheffel=, Ekkehard. Eine Geschichte aus dem zehnten Jahrhundert.
 
@@ -16067,7 +16067,7 @@ function loadTextData() {
     `;
     console.log('Textdaten geladen.');
     //textData = replaceSpecialCharacters(textData);
-    //console.log('äöüß behandelt.');
+    //console.log('Ã¤Ã¶Ã¼ÃŸ behandelt.');
 
     /*let encoder = new TextEncoder();
     let binaryData = encoder.encode(textData);

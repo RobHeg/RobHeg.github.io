@@ -33,7 +33,10 @@
             <div id="white-area" style="height: calc(100vh); width: 500px;"> 
                 <h2>RNN predictions</p>
                 <div id="RNN-predictions">
-                <!-- this is where the plotly graph will appear by code -->
+                    <!-- this is where the plotly graph will appear by code -->
+                </div>
+                <div id="RNN-char-predictions">
+                    <!-- this is where the plotly graph will appear by code -->
                 </div>
             </div>
 
@@ -58,11 +61,14 @@
                 <div id="FFNN-predictions">
                     <!-- this is where the plotly graph will appear by code -->
                 </div>
+                <div id="FFNN-char-predictions">
+                    <!-- this is where the plotly graph will appear by code -->
+                </div>
             </div>
         </div>
         
         <!--dev tools data-->
-        <div id="white-area" style="display:none;"> 
+        <div id="white-area" style="display:none;"> <!--style="display:none;"-->
             <div id="horizontal-alignment">
                 <h2>Dev Tools</h2>
                 <button id="save-data-btn" class="button-green">Save Data</button>
@@ -70,10 +76,10 @@
                 <button id="train-RNNmodel-btn" class="button-green">Train RNN model</button>
                 <button id="train-FFNNmodel-btn" class="button-green">Train FFNN model</button>
 
-                <div id="horizontal-alignment">
+                <!--<div id="horizontal-alignment">
                     <div style="width:20px">
                     </div>
-                    <p style="font-size: 20px; margin-top: 10px;">RNN</p>
+                    <p style="font-size: 20px; margin-top: 10px;">chars</p>
                     <div style="width:20px">
                     </div>
                     <label class="switch">
@@ -82,8 +88,8 @@
                     </label>
                     <div style="width:20px">
                     </div>
-                    <p style="font-size: 20px; margin-top: 10px;">FFNN</p>
-                </div>
+                    <p style="font-size: 20px; margin-top: 10px;">words</p>
+                </div>-->
             </div>
         </div>
 

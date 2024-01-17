@@ -95,8 +95,16 @@ function cleanTextData(textData){
 }
 cleanTextData(textData);
 
+/********************************************************************************************* words ***************************/
+
 // Tokenisierung
 function tokenizer(text) {
+    // Überprüfen, ob der Text undefined ist
+    if (typeof text === 'undefined') {
+        console.log('Tokenizer: Kein Text zur Verarbeitung vorhanden.');
+        return [];
+    }
+
     text = text.trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,""); //Sonderzeichen entfernen
     text = text.replace(/[\r\n]+/g, ' ');     //Zeilenumbrüche wie \n oder \rersetzen durch  ''
     let texttokens = text.split(' ');
@@ -156,8 +164,77 @@ console.log('Sequenzbildung und One-Hot-Encoding abgeschlossen.');
 console.log('Daten sind bereit für das Modell.');
 console.log('Länge von xs:', xs.length);
 
+//initially create the newdictionary as a copy of the dictionary, ordered by the frequency of how often words appear in the original Text as orderedWords list
+let newDictionary = {};
+let orderedWords = [];
+// Erstellen Sie eine Frequenzkarte
+let frequencyMap = {};
+tokens.forEach(token => {
+    if (!(token in frequencyMap)) {
+        frequencyMap[token] = 1;
+    } else {
+        frequencyMap[token]++;
+    }
+});
 
-/***************************************************************************** RNN ******************************************************************************/
+// Sortieren Sie die Frequenzkarte
+orderedWords = Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
+
+// Erstellen Sie das neue Wörterbuch
+newDictionary = {};
+orderedWords.forEach((token, i) => {
+    newDictionary[token] = wordIndex[token];
+});
+
+
+let initialOrderedWords = orderedWords;
+console.log('initial frequency List: ', initialOrderedWords);
+
+/***************************************************************************** chars ***************************************************************************/
+
+/*// Buchstabentokenisierung
+function charTokenizer(text) {
+    text = translateSpecialCharacters(text);  //Spezielle Zeichen übersetzen
+    text = text.toLowerCase();  // Umwandlung in Kleinbuchstaben
+    let chartokens = text.split('');
+    chartokens = chartokens.filter(chartoken => {
+        // Behalte nur alphanumerische Zeichen, Leerzeichen und spezielle deutsche Zeichen
+        return /[a-z0-9äöüß]/.test(chartoken);
+    });
+    return chartokens;
+}
+let charTokens = charTokenizer(textData);
+console.log('Buchstabentokenisierung abgeschlossen.');
+console.log('Tokenisierte Buchstabendaten:', charTokens);
+
+// Wörterbuch für Buchstaben
+let charIndex = {};
+charTokens.forEach((token, i) => {
+    if (!(token in charIndex)) {
+        charIndex[token] = i + 1;
+    }
+});
+console.log('Wörterbuch für Buchstaben:', charIndex);
+console.log('Wörterbuch für Buchstaben erstellt.');
+let charVocabSize = Object.keys(charIndex).length;
+console.log('unique characters:', charVocabSize);
+
+// Sequenzbildung für Buchstaben
+let charSequences = charTokens.map(token => charIndex[token]);
+console.log('Sequenzen für Buchstaben:', charSequences);
+let charXs = [];
+let charYs = [];
+for (let i = 0; i < charSequences.length - 1; i++) {
+    charXs.push(charSequences[i]);
+    charYs.push(charSequences[i + 1]);
+}
+console.log('xs für Buchstaben:', charXs);
+console.log('ys für Buchstaben:', charYs);
+console.log('Sequenzbildung und One-Hot-Encoding für Buchstaben abgeschlossen.');
+console.log('Daten für Buchstaben sind bereit für das Modell.');
+console.log('Länge von xs für Buchstaben:', charXs.length);*/
+
+/***************************************************************************** RNN words ******************************************************************************/
 // Umwandlung in One-Hot-Vektoren
 let xsOneHot = tf.oneHot(tf.tensor1d(xs, 'int32'), vocabSize);
 let ysOneHot = tf.oneHot(tf.tensor1d(ys, 'int32'), vocabSize);
@@ -210,7 +287,7 @@ function predictRNN(seedText, timestep) {
     }));
 }
 
-/***************************************************************************** FFNN *****************************************************************************/
+/***************************************************************************** FFNN words *****************************************************************************/
 
 
 // Umwandlung in One-Hot-Vektoren
@@ -262,11 +339,130 @@ function predictFFNN(seedText) {
     }));
 }
 
+/*********************************************************************** RNN chars ***************************************************/
+/*// Umwandlung in One-Hot-Vektoren für Buchstaben
+let charXsOneHot = tf.oneHot(tf.tensor1d(charXs, 'int32'), charVocabSize);
+let charYsOneHot = tf.oneHot(tf.tensor1d(charYs, 'int32'), charVocabSize);
+
+// Hinzufügen einer Dimension für Zeitschritte - wie viele Buchstaben sich angeschaut werden in der Sequenz, um das nächste vorherzusagen
+charXsOneHot = charXsOneHot.reshape([charXsOneHot.shape[0], 1, charXsOneHot.shape[1]]);
+
+// Modell erstellen für Buchstaben
+let charRNNmodel = tf.sequential();
+charRNNmodel.add(tf.layers.simpleRNN({units: 5, inputShape: [1, charVocabSize]}));
+charRNNmodel.add(tf.layers.dense({units: charVocabSize, activation: 'softmax'}));
+console.log('Initiales RNN Modell für Buchstaben deklariert und erstellt');
+
+// Modell kompilieren für Buchstaben
+charRNNmodel.compile({loss: 'categoricalCrossentropy', optimizer: 'adam'});
+console.log('Initiales RNN Modell für Buchstaben kompiliert');
+
+// Modell trainieren für Buchstaben
+async function trainCharRNNModel() {
+    const batchSize = 128;
+    const epochs = 10;
+    charRNNmodel.fit(charXsOneHot, charYsOneHot, {
+        batchSize, 
+        epochs,
+        callbacks: {
+            onEpochEnd: (epoch, logs) => {
+                console.log(`Epoch ${epoch}: loss = ${logs.loss}`);
+            }
+        }
+    }).then(() => {
+        console.log('RNN Modelltraining für Buchstaben abgeschlossen.');
+    });
+}
+
+// RNN Vorhersagefunktion für Buchstaben
+function predictCharRNN(seedText, timestep) {
+    let seedCharTokens = charTokenizer(seedText);
+    console.log('text zur RNN prediction für Buchstaben erkannt:', seedCharTokens);
+    let seedCharSequences = seedCharTokens.map(token => charIndex[token]);
+    let seedCharOneHot = tf.oneHot(tf.tensor1d(seedCharSequences, 'int32'), charVocabSize);
+    seedCharOneHot = seedCharOneHot.reshape([seedCharOneHot.shape[0], timestep, seedCharOneHot.shape[1]]);
+    let prediction = charRNNmodel.predict(seedCharOneHot);
+    let topn = 3;
+    let topk = tf.topk(prediction, topn);
+    let predictedIndices = Array.from(topk.indices.dataSync());
+    let predictedProbabilities = Array.from(topk.values.dataSync());
+    return predictedIndices.map((index, i) => ({
+        char: Object.keys(charIndex).find(key => charIndex[key] === index),
+        confidence: predictedProbabilities[i]
+    }));
+}
+*/
+/*********************************************************************** FFNN characters **********************************************/
+/*
+// Umwandlung in One-Hot-Vektoren für Buchstaben
+let charXsOneHotF = tf.oneHot(tf.tensor1d(charXs, 'int32'), charVocabSize);
+let charYsOneHotF = tf.oneHot(tf.tensor1d(charYs, 'int32'), charVocabSize);
+
+// Modell erstellen für Buchstaben
+let charFFNNmodel = tf.sequential();
+charFFNNmodel.add(tf.layers.dense({units: 5, inputShape: [charVocabSize], activation: 'relu'}));
+charFFNNmodel.add(tf.layers.dense({units: charVocabSize, activation: 'softmax'}));
+console.log('Initiales FFNN Modell für Buchstaben deklariert und erstellt');
+
+// Modell kompilieren für Buchstaben
+charFFNNmodel.compile({loss: 'categoricalCrossentropy', optimizer: 'adam'});
+console.log('Initiales FFNN Modell für Buchstaben kompiliert');
+
+// Modell trainieren für Buchstaben
+async function trainCharFFNNModel() {
+    const batchSizeFFNN = 128;
+    const epochsFFNN = 10;
+    charFFNNmodel.fit(charXsOneHotF, charYsOneHotF, {
+        batchSize: batchSizeFFNN, 
+        epochs: epochsFFNN,
+        callbacks: {
+            onEpochEnd: (epoch, logs) => {
+                console.log(`Epoch ${epoch}: loss = ${logs.loss}`);
+            }
+        }
+    }).then(() => {
+        console.log('FFNN Modelltraining für Buchstaben abgeschlossen.');
+    });
+}
+
+// FFNN Vorhersagefunktion für Buchstaben
+function predictCharFFNN(seedText) {
+    let seedCharTokens = charTokenizer(seedText);
+    console.log('text zur FFNN prediction für Buchstaben erkannt:', seedCharTokens);
+    let seedCharSequences = seedCharTokens.map(token => charIndex[token]).filter(index => index !== undefined);
+    let seedCharOneHot = tf.oneHot(tf.tensor1d(seedCharSequences, 'int32'), charVocabSize);
+    let prediction = charFFNNmodel.predict(seedCharOneHot);
+    // Ermittlung der Indizes der n wahrscheinlichsten Vorhersagen
+    let topn = 3;
+    let topk = tf.topk(prediction, topn);
+    let predictedIndices = Array.from(topk.indices.dataSync());
+    let predictedProbabilities = Array.from(topk.values.dataSync());
+    return predictedIndices.map((index, i) => ({
+        char: Object.keys(charIndex).find(key => charIndex[key] === index),
+        confidence: predictedProbabilities[i]
+    }));
+}
+*/
 
 /*********************************************************************** dev functions ************************************************/
 //RNN Modell trainieren
-document.getElementById('train-RNNmodel-btn').addEventListener('click', trainRNNModel);
-document.getElementById('train-FFNNmodel-btn').addEventListener('click', trainFFNNModel);
+document.getElementById('train-RNNmodel-btn').addEventListener('click', function() {
+    //let modelType = document.getElementById('model-type').checked;
+    //if (modelType) {
+        trainRNNModel(); // Trainiert das Wortmodell
+    /*} else {
+        trainCharRNNModel(); // Trainiert das Buchstabenmodell
+    }*/
+});
+
+document.getElementById('train-FFNNmodel-btn').addEventListener('click', function() {
+    let modelType = document.getElementById('model-type').checked;
+    //if (modelType) {
+        trainFFNNModel(); // Trainiert das Wortmodell
+    /*} else {
+        trainCharFFNNModel(); // Trainiert das Buchstabenmodell
+    }*/
+});
 
 /************************************************************************ save model **************************************************/
 async function saveModel(model) {
@@ -338,9 +534,18 @@ function saveDictionary(dictionary) {
 
 // Button-Event hinzufügen
 document.getElementById('save-data-btn').addEventListener('click', function() {
-    //saveModel(RNNmodel);
-    saveModel(FFNNmodel);
-    saveDictionary(wordIndex);
+    //let modelType = document.getElementById('model-type').checked;
+    //if (modelType) {
+        // Speichern des RNN- oder FFNN-Wortmodells und des Wörterbuchs
+        saveModel(RNNmodel, 'RNNmodel');
+        saveModel(FFNNmodel, 'FFNNmodel');
+        saveDictionary(wordIndex, 'wordIndex');
+    //} else {
+        // Speichern des RNN- oder FFNN-Buchstabenmodells und des Buchstabenwörterbuchs
+        //saveModel(charRNNmodel, 'charRNNmodel');
+        //saveModel(charFFNNmodel, 'charFFNNmodel');
+    //    saveDictionary(charIndex, 'charIndex');
+    //}
 });
 
 /************************************************************************ load model **************************************************/
@@ -470,6 +675,12 @@ function preprocessInput(input) {
     return lastWord;
 }
 
+function preprocessChar(input) {
+    // Holen Sie sich den letzten Buchstaben
+    let lastChar = input.slice(-1);
+    return lastChar;
+}
+
 //plot predictions
 function plotPredictions(predictions, elementId) {
     // Überprüfen Sie, ob das Element existiert
@@ -480,7 +691,7 @@ function plotPredictions(predictions, elementId) {
     }
     
     // Prepare the labels and confidences
-    let labels = predictions.map(p => translateSpecialCharacters(p.word) + '  ').reverse();
+    let labels = predictions.map(p => p.word ? translateSpecialCharacters(p.word) + '  ' : '').reverse();
     let confidences = predictions.map(p => p.confidence).reverse();
 
     // Prepare the data for the bar chart
@@ -522,13 +733,104 @@ function plotPredictions(predictions, elementId) {
     });
 }
 
+
+function createNewDictionary(predictions) {
+    // Erstellen Sie ein Array basierend auf den Vorhersagen
+    //let orderedWords = predictions.map(p => p.word);
+    orderedWords = predictions.map(p => p.word);
+
+    // Fügen Sie alle Wörter aus dem alten Wörterbuch hinzu, die nicht in den Vorhersagen waren
+    for (let word in wordIndex) {
+        if (!orderedWords.includes(word)) {
+            orderedWords.push(word);
+        }
+    }
+
+    // Erstellen Sie ein neues Wörterbuch aus dem geordneten Array
+    for (let i = 0; i < orderedWords.length; i++) {
+        newDictionary[orderedWords[i]] = wordIndex[orderedWords[i]];
+    }
+}
+
+function completeWord(partialWord) {
+    // Durchlaufen Sie das neue Wörterbuch
+    for (let word in newDictionary) {
+        // Überprüfen Sie, ob das Wort mit dem teilweise eingegebenen Wort beginnt
+        if (word.startsWith(partialWord)) {
+            return word;
+        }
+    }
+
+    // Wenn kein passendes Wort gefunden wurde, geben Sie null zurück
+    return null;
+}
+
+function completeFirstWord(partialWord) {
+    // Durchlaufen Sie alle Wörter im Wörterbuch
+    for (let word in wordIndex) {
+        // Überprüfen Sie, ob das Wort mit dem teilweise eingegebenen Wort beginnt
+        if (word.startsWith(partialWord)) {
+            return word;
+        }
+    }
+
+    // Wenn kein passendes Wort gefunden wurde, geben Sie null zurück
+    return null;
+}
+
+function findWordPositionInList(word, list) {
+    // Überprüfen Sie, ob das Wort im Wörterbuch existiert
+    if (word in newDictionary) {
+        // Finden Sie die Position des Wortes in orderedWords
+        let position = list.indexOf(word);
+
+        // Da die Indizes in JavaScript bei 0 beginnen, addieren Sie 1 zur Position
+        return position + 1;
+    }
+
+    // Wenn das Wort nicht im Wörterbuch gefunden wurde, geben Sie null zurück
+    return null;
+}
+
+function countWordsInInput(input) {
+    let specialCharMapping = {
+        'ä': '<ae>',
+        'ü': '<ue>',
+        'ö': '<oe>',
+        'ß': '<ss>',
+        'Ä': '<AE>',
+        'Ü': '<UE>',
+        'Ö': '<OE>',
+        'ẞ': '<SS>'
+    };
+
+    // Ersetzen Sie die Sonderzeichen
+    let preprocessedInput = input.replace(/[äüößÄÜÖẞ]/g, function(match) {
+        return specialCharMapping[match];
+    });
+
+    // Tokenisieren Sie die vorverarbeitete Eingabe
+    let tokens = tokenizer(preprocessedInput);
+
+    // Geben Sie die Anzahl der Tokens zurück
+    return tokens.length;
+}
+
 //prediction in der Konsole und Grafiken in den predicitons-Regionen
 document.getElementById('chat-input').addEventListener('keyup', function(e) {
-    if (e.key === ' ') {
-        let preprocessedInput = preprocessInput(e.target.value);
-        let wordExistsInDictionary = preprocessedInput in wordIndex;
-        if (!wordExistsInDictionary) {
-            console.log('The word "' + preprocessedInput + '" is not in the dictionary.');
+    let preprocessedInput = preprocessInput(e.target.value);
+    //let preprocessedChar = preprocessChar(e.target.value);
+    let wordExistsInDictionary = preprocessedInput in wordIndex;
+    //let charExistsInDictionary = preprocessedChar in charIndex;
+    if (e.key === ' ' && typeof preprocessedInput !== 'undefined' && preprocessedInput.length > 0) {
+        console.log('new dictionary: ', newDictionary);
+        let wordCount = countWordsInInput(e.target.value);
+        let listToUse = wordCount === 1 ? initialOrderedWords : orderedWords;
+        let position = findWordPositionInList(preprocessedInput, listToUse);
+        if (position !== null) {
+            console.log('Das Wort "' + translateSpecialCharacters(preprocessedInput) + '" war guess Nummer ' + position + ' von RNN.');
+        } else {
+            console.log('Das Wort "' + translateSpecialCharacters(preprocessedInput) + '" ist nicht im Wörterbuch vorhanden.');
         }
         let predictionsRNN = predictRNN(preprocessedInput, 1);
         console.log('RNN predicts: ' + predictionsRNN.map(p => p.word + ' (' + p.confidence.toFixed(2) + ')').join(', '));
@@ -540,6 +842,42 @@ document.getElementById('chat-input').addEventListener('keyup', function(e) {
         } else {
             console.log('The word "' + preprocessedInput + '" is not in the dictionary.');
             console.log('FFNN cannot predict the next word.');
+        }
+        createNewDictionary(predictionsRNN);
+    } else {
+        // Überprüfen, ob mindestens ein Buchstabe eingegeben wurde
+        if (typeof preprocessedInput !== 'undefined'){
+            if (preprocessedInput.length > 0) {
+            
+                //Wörter vervollständigen
+                let predictionsRNN = predictRNN(preprocessedInput, 1);
+                let completion = completeWord(preprocessedInput, predictionsRNN);
+                if (completion) {
+                    console.log('RNN suggests: ' + completion);
+                } else {
+                    let firstWordCompletion = completeFirstWord(preprocessedInput);
+                    if (firstWordCompletion) {
+                        console.log('First word completion: ' + firstWordCompletion);
+                    }
+                }
+
+                // Nur den letzten Buchstaben zur Vorhersage verwenden
+                /*let lastChar = preprocessedInput.slice(-1);
+                if (!charExistsInDictionary) {
+                    console.log('The character "' + lastChar + '" is not in the dictionary.');
+                }
+                let predictionsCharRNN = predictCharRNN(lastChar, 1);
+                console.log('Char RNN predicts: ' + predictionsCharRNN.map(p => p.char + ' (' + p.confidence.toFixed(2) + ')').join(', '));
+                plotPredictions(predictionsCharRNN, 'RNN-char-predictions');
+                if (charExistsInDictionary) {
+                    let predictionsCharFFNN = predictCharFFNN(lastChar);
+                    console.log('Char FFNN predicts: ' + predictionsCharFFNN.map(p => p.char + ' (' + p.confidence.toFixed(2) + ')').join(', '));
+                    plotPredictions(predictionsCharFFNN, 'FFNN-char-predictions');
+                } else {
+                    console.log('The character "' + lastChar + '" is not in the dictionary.');
+                    console.log('Char FFNN cannot predict the next character.');
+                }*/
+            }
         }
     }
 });
