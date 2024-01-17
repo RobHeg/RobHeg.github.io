@@ -164,9 +164,11 @@ console.log('Sequenzbildung und One-Hot-Encoding abgeschlossen.');
 console.log('Daten sind bereit für das Modell.');
 console.log('Länge von xs:', xs.length);
 
-//initially create the newdictionary as a copy of the dictionary, ordered by the frequency of how often words appear in the original Text as orderedWords list
+//initially create the newdictionary as a copy of the dictionary, ordered by the frequency of how often words appear in the original Text as orderedWords_RNN list
 let newDictionary = {};
-let orderedWords = [];
+let initialOrderedWordList = [];
+let orderedWords_RNN = [];
+let orderedWords_FFNN = [];
 // Erstellen Sie eine Frequenzkarte
 let frequencyMap = {};
 tokens.forEach(token => {
@@ -178,17 +180,17 @@ tokens.forEach(token => {
 });
 
 // Sortieren Sie die Frequenzkarte
-orderedWords = Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
+initialOrderedWordList = Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
 
 // Erstellen Sie das neue Wörterbuch
 newDictionary = {};
-orderedWords.forEach((token, i) => {
+initialOrderedWordList.forEach((token, i) => {
     newDictionary[token] = wordIndex[token];
 });
 
 
-let initialOrderedWords = orderedWords;
-console.log('initial frequency List: ', initialOrderedWords);
+//let initialOrderedWordList = orderedWords_RNN;
+console.log('initial frequency List: ', initialOrderedWordList);
 
 /***************************************************************************** chars ***************************************************************************/
 
@@ -736,19 +738,19 @@ function plotPredictions(predictions, elementId) {
 
 function createNewDictionary(predictions) {
     // Erstellen Sie ein Array basierend auf den Vorhersagen
-    //let orderedWords = predictions.map(p => p.word);
-    orderedWords = predictions.map(p => p.word);
+    //let orderedWords_RNN = predictions.map(p => p.word);
+    orderedWords_RNN = predictions.map(p => p.word);
 
     // Fügen Sie alle Wörter aus dem alten Wörterbuch hinzu, die nicht in den Vorhersagen waren
     for (let word in wordIndex) {
-        if (!orderedWords.includes(word)) {
-            orderedWords.push(word);
+        if (!orderedWords_RNN.includes(word)) {
+            orderedWords_RNN.push(word);
         }
     }
 
     // Erstellen Sie ein neues Wörterbuch aus dem geordneten Array
-    for (let i = 0; i < orderedWords.length; i++) {
-        newDictionary[orderedWords[i]] = wordIndex[orderedWords[i]];
+    for (let i = 0; i < orderedWords_RNN.length; i++) {
+        newDictionary[orderedWords_RNN[i]] = wordIndex[orderedWords_RNN[i]];
     }
 }
 
@@ -781,7 +783,7 @@ function completeFirstWord(partialWord) {
 function findWordPositionInList(word, list) {
     // Überprüfen Sie, ob das Wort im Wörterbuch existiert
     if (word in newDictionary) {
-        // Finden Sie die Position des Wortes in orderedWords
+        // Finden Sie die Position des Wortes in orderedWords_RNN
         let position = list.indexOf(word);
 
         // Da die Indizes in JavaScript bei 0 beginnen, addieren Sie 1 zur Position
@@ -816,6 +818,38 @@ function countWordsInInput(input) {
     return tokens.length;
 }
 
+function writeStatementToElement(word, list, elementId) {
+    // Überprüfen Sie, ob das Element existiert
+    let element = document.getElementById(elementId);
+    if (!element) {
+        console.error('Element mit der ID ' + elementId + ' existiert nicht');
+        return;
+    }
+
+    // Finden Sie die Position des Wortes in der Liste
+    let position = findWordPositionInList(word, list);
+
+    // Bereiten Sie die Aussage vor
+    let statement;
+    if (position !== null) {
+        if (list === initialOrderedWordList) {
+            statement = 'Das Wort "' + translateSpecialCharacters(word) + '" war auf Platz Nummer ' + position + ' in der nach Häufigkeit geordneten Liste aller Wörter des Ausgangstextes';
+        } else if (list === orderedWords_RNN) {
+            statement = 'Das Wort "' + translateSpecialCharacters(word) + '" war guess Nummer ' + position + ' von RNN.';
+        } else if (list === orderedWords_FFNN) {
+            statement = 'Das Wort "' + translateSpecialCharacters(word) + '" war guess Nummer ' + position + ' von FFNN.';
+        }
+    } else {
+        statement = 'Das Wort "' + translateSpecialCharacters(word) + '" ist nicht im Wörterbuch vorhanden.';
+    }
+
+    // Löschen Sie den aktuellen Inhalt des Elements
+    element.innerHTML = '';
+
+    // Schreiben Sie die Aussage in das Element
+    element.innerHTML = statement;
+}
+
 //prediction in der Konsole und Grafiken in den predicitons-Regionen
 document.getElementById('chat-input').addEventListener('keyup', function(e) {
     let preprocessedInput = preprocessInput(e.target.value);
@@ -823,27 +857,36 @@ document.getElementById('chat-input').addEventListener('keyup', function(e) {
     let wordExistsInDictionary = preprocessedInput in wordIndex;
     //let charExistsInDictionary = preprocessedChar in charIndex;
     if (e.key === ' ' && typeof preprocessedInput !== 'undefined' && preprocessedInput.length > 0) {
-        console.log('new dictionary: ', newDictionary);
         let wordCount = countWordsInInput(e.target.value);
-        let listToUse = wordCount === 1 ? initialOrderedWords : orderedWords;
-        let position = findWordPositionInList(preprocessedInput, listToUse);
+        let listToUse_RNN = wordCount === 1 ? initialOrderedWordList : orderedWords_RNN;
+        let listToUse_FFNN = wordCount === 1 ? initialOrderedWordList : orderedWords_FFNN;
+        let position = findWordPositionInList(preprocessedInput, listToUse_RNN);
         if (position !== null) {
-            console.log('Das Wort "' + translateSpecialCharacters(preprocessedInput) + '" war guess Nummer ' + position + ' von RNN.');
+            if (listToUse_RNN === initialOrderedWordList) {
+                console.log('Das Wort "' + translateSpecialCharacters(preprocessedInput) + '" war auf Platz Nummer ' + position + ' in der nach Häufigkeit geordneten Liste aller Wörter des Ausgangstextes');
+            } else {
+                console.log('Das Wort "' + translateSpecialCharacters(preprocessedInput) + '" war guess Nummer ' + position + ' von RNN.');
+            }
         } else {
             console.log('Das Wort "' + translateSpecialCharacters(preprocessedInput) + '" ist nicht im Wörterbuch vorhanden.');
         }
         let predictionsRNN = predictRNN(preprocessedInput, 1);
         console.log('RNN predicts: ' + predictionsRNN.map(p => p.word + ' (' + p.confidence.toFixed(2) + ')').join(', '));
         plotPredictions(predictionsRNN, 'RNN-predictions');
+        writeStatementToElement(preprocessedInput, listToUse_RNN, 'RNN-placement-evaluation');
         if (wordExistsInDictionary) {
             let predictionsFFNN = predictFFNN(preprocessedInput);
             console.log('FFNN predicts: ' + predictionsFFNN.map(p => p.word + ' (' + p.confidence.toFixed(2) + ')').join(', '));
             plotPredictions(predictionsFFNN, 'FFNN-predictions');
+            writeStatementToElement(preprocessedInput, listToUse_FFNN, 'FFNN-placement-evaluation');
         } else {
             console.log('The word "' + preprocessedInput + '" is not in the dictionary.');
             console.log('FFNN cannot predict the next word.');
+            Plotly.purge('FFNN-predictions');
+            writeStatementToElement(preprocessedInput, listToUse_FFNN, 'FFNN-placement-evaluation');
         }
         createNewDictionary(predictionsRNN);
+        console.log('RNN guess list: ', orderedWords_RNN);
     } else {
         // Überprüfen, ob mindestens ein Buchstabe eingegeben wurde
         if (typeof preprocessedInput !== 'undefined'){
