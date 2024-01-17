@@ -188,8 +188,6 @@ initialOrderedWordList.forEach((token, i) => {
     newDictionary[token] = wordIndex[token];
 });
 
-
-//let initialOrderedWordList = orderedWords_RNN;
 console.log('initial frequency List: ', initialOrderedWordList);
 
 /***************************************************************************** chars ***************************************************************************/
@@ -736,7 +734,7 @@ function plotPredictions(predictions, elementId) {
 }
 
 
-function createNewDictionary(predictions) {
+function createNewDictionary_RNN(predictions) {
     // Erstellen Sie ein Array basierend auf den Vorhersagen
     //let orderedWords_RNN = predictions.map(p => p.word);
     orderedWords_RNN = predictions.map(p => p.word);
@@ -754,7 +752,25 @@ function createNewDictionary(predictions) {
     }
 }
 
-function completeWord(partialWord) {
+function createNewDictionary_FFNN(predictions) {
+    // Erstellen Sie ein Array basierend auf den Vorhersagen
+    //let orderedWords_RNN = predictions.map(p => p.word);
+    orderedWords_FFNN = predictions.map(p => p.word);
+
+    // Fügen Sie alle Wörter aus dem alten Wörterbuch hinzu, die nicht in den Vorhersagen waren
+    for (let word in wordIndex) {
+        if (!orderedWords_FFNN.includes(word)) {
+            orderedWords_FFNN.push(word);
+        }
+    }
+
+    // Erstellen Sie ein neues Wörterbuch aus dem geordneten Array
+    for (let i = 0; i < orderedWords_FFNN.length; i++) {
+        newDictionary[orderedWords_FFNN[i]] = wordIndex[orderedWords_FFNN[i]];
+    }
+}
+
+/*function completeWord(partialWord) {
     // Durchlaufen Sie das neue Wörterbuch
     for (let word in newDictionary) {
         // Überprüfen Sie, ob das Wort mit dem teilweise eingegebenen Wort beginnt
@@ -773,6 +789,19 @@ function completeFirstWord(partialWord) {
         // Überprüfen Sie, ob das Wort mit dem teilweise eingegebenen Wort beginnt
         if (word.startsWith(partialWord)) {
             return word;
+        }
+    }
+
+    // Wenn kein passendes Wort gefunden wurde, geben Sie null zurück
+    return null;
+}*/
+
+function completeWord(partialWord, orderedWords) {
+    // Durchlaufen Sie die geordnete Wortliste
+    for (let i = 0; i < orderedWords.length; i++) {
+        // Überprüfen Sie, ob das Wort mit dem teilweise eingegebenen Wort beginnt
+        if (orderedWords[i].startsWith(partialWord)) {
+            return orderedWords[i];
         }
     }
 
@@ -874,33 +903,46 @@ document.getElementById('chat-input').addEventListener('keyup', function(e) {
         console.log('RNN predicts: ' + predictionsRNN.map(p => p.word + ' (' + p.confidence.toFixed(2) + ')').join(', '));
         plotPredictions(predictionsRNN, 'RNN-predictions');
         writeStatementToElement(preprocessedInput, listToUse_RNN, 'RNN-placement-evaluation');
+        createNewDictionary_RNN(predictionsRNN);
+        console.log('RNN guess list: ', orderedWords_RNN);
         if (wordExistsInDictionary) {
             let predictionsFFNN = predictFFNN(preprocessedInput);
             console.log('FFNN predicts: ' + predictionsFFNN.map(p => p.word + ' (' + p.confidence.toFixed(2) + ')').join(', '));
             plotPredictions(predictionsFFNN, 'FFNN-predictions');
             writeStatementToElement(preprocessedInput, listToUse_FFNN, 'FFNN-placement-evaluation');
+            createNewDictionary_FFNN(predictionsFFNN);
+            console.log('FFNN guess list: ', orderedWords_FFNN);
         } else {
             console.log('The word "' + preprocessedInput + '" is not in the dictionary.');
             console.log('FFNN cannot predict the next word.');
             Plotly.purge('FFNN-predictions');
             writeStatementToElement(preprocessedInput, listToUse_FFNN, 'FFNN-placement-evaluation');
         }
-        createNewDictionary(predictionsRNN);
-        console.log('RNN guess list: ', orderedWords_RNN);
     } else {
         // Überprüfen, ob mindestens ein Buchstabe eingegeben wurde
         if (typeof preprocessedInput !== 'undefined'){
             if (preprocessedInput.length > 0) {
             
-                //Wörter vervollständigen
-                let predictionsRNN = predictRNN(preprocessedInput, 1);
-                let completion = completeWord(preprocessedInput, predictionsRNN);
-                if (completion) {
-                    console.log('RNN suggests: ' + completion);
+                //Wörter vervollständigen - RNN
+                //let predictionsRNN = predictRNN(preprocessedInput, 1);
+                let completion_RNN = completeWord(preprocessedInput, orderedWords_RNN);
+                if (completion_RNN) {
+                    console.log('RNN suggests: ' + completion_RNN);
                 } else {
-                    let firstWordCompletion = completeFirstWord(preprocessedInput);
+                    let firstWordCompletion = completeWord(preprocessedInput, initialOrderedWordList);
                     if (firstWordCompletion) {
-                        console.log('First word completion: ' + firstWordCompletion);
+                        console.log('First word completion RNN: ' + firstWordCompletion);
+                    }
+                }
+               
+                //Wörter vervollständigen - FFNN
+                let completion_FFNN = completeWord(preprocessedInput, orderedWords_FFNN);
+                if (completion_FFNN) {
+                    console.log('FFNN suggests: ' + completion_FFNN);
+                } else {
+                    let firstWordCompletion = completeWord(preprocessedInput, initialOrderedWordList);
+                    if (firstWordCompletion) {
+                        console.log('First word completion FFNN: ' + firstWordCompletion);
                     }
                 }
 
