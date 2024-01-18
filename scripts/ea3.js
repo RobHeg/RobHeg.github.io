@@ -171,6 +171,7 @@ let orderedWords_RNN = [];
 let orderedWords_FFNN = [];
 // Erstellen Sie eine Frequenzkarte
 let frequencyMap = {};
+let totalWords = tokens.length;
 tokens.forEach(token => {
     if (!(token in frequencyMap)) {
         frequencyMap[token] = 1;
@@ -182,13 +183,16 @@ tokens.forEach(token => {
 // Sortieren Sie die Frequenzkarte
 initialOrderedWordList = Object.keys(frequencyMap).sort((a, b) => frequencyMap[b] - frequencyMap[a]);
 
-// Erstellen Sie das neue Wörterbuch
+// Erstellen Sie das neue Wörterbuch und die Konfidenzliste
 newDictionary = {};
+let initialWordConfidence = [];
 initialOrderedWordList.forEach((token, i) => {
     newDictionary[token] = wordIndex[token];
+    initialWordConfidence[i] = frequencyMap[token] / totalWords;
 });
 
 console.log('initial frequency List: ', initialOrderedWordList);
+console.log('initial confidences: ', initialWordConfidence);
 
 /***************************************************************************** chars ***************************************************************************/
 
@@ -734,15 +738,18 @@ function plotPredictions(predictions, elementId) {
 }
 
 
+let orderedConfidences_RNN = [];
+
 function createNewDictionary_RNN(predictions) {
     // Erstellen Sie ein Array basierend auf den Vorhersagen
-    //let orderedWords_RNN = predictions.map(p => p.word);
     orderedWords_RNN = predictions.map(p => p.word);
+    orderedConfidences_RNN = predictions.map(p => p.confidence);
 
     // Fügen Sie alle Wörter aus dem alten Wörterbuch hinzu, die nicht in den Vorhersagen waren
     for (let word in wordIndex) {
         if (!orderedWords_RNN.includes(word)) {
             orderedWords_RNN.push(word);
+            orderedConfidences_RNN.push(0); // Setzen Sie die Wahrscheinlichkeit auf 0 für Wörter, die nicht vorhergesagt wurden
         }
     }
 
@@ -752,15 +759,18 @@ function createNewDictionary_RNN(predictions) {
     }
 }
 
+let orderedConfidences_FFNN = [];
+
 function createNewDictionary_FFNN(predictions) {
     // Erstellen Sie ein Array basierend auf den Vorhersagen
-    //let orderedWords_RNN = predictions.map(p => p.word);
     orderedWords_FFNN = predictions.map(p => p.word);
+    orderedConfidences_FFNN = predictions.map(p => p.confidence);
 
     // Fügen Sie alle Wörter aus dem alten Wörterbuch hinzu, die nicht in den Vorhersagen waren
     for (let word in wordIndex) {
         if (!orderedWords_FFNN.includes(word)) {
             orderedWords_FFNN.push(word);
+            orderedConfidences_FFNN.push(0); // Setzen Sie die Wahrscheinlichkeit auf 0 für Wörter, die nicht vorhergesagt wurden
         }
     }
 
@@ -796,17 +806,29 @@ function completeFirstWord(partialWord) {
     return null;
 }*/
 
-function completeWord(partialWord, orderedWords) {
+function completeWord(partialWord, orderedWords, orderedConfidences, numWords) {
+    // Erstellen Sie ein Array, um die passenden Wörter zu speichern
+    let matchingWords = [];
+
     // Durchlaufen Sie die geordnete Wortliste
     for (let i = 0; i < orderedWords.length; i++) {
         // Überprüfen Sie, ob das Wort mit dem teilweise eingegebenen Wort beginnt
         if (orderedWords[i].startsWith(partialWord)) {
-            return orderedWords[i];
+            matchingWords.push({word: orderedWords[i], confidence: orderedConfidences[i]});
+
+            // Überprüfen Sie, ob die gewünschte Anzahl von Wörtern erreicht wurde
+            if (matchingWords.length === numWords) {
+                break;
+            }
         }
     }
 
-    // Wenn kein passendes Wort gefunden wurde, geben Sie null zurück
-    return null;
+    // Füllen Sie das Array mit 'null', wenn weniger Wörter gefunden wurden
+    while (matchingWords.length < numWords) {
+        matchingWords.push({word: null, confidence: 0});
+    }
+
+    return matchingWords;
 }
 
 function findWordPositionInList(word, list) {
@@ -862,7 +884,7 @@ function writeStatementToElement(word, list, elementId) {
     let statement;
     if (position !== null) {
         if (list === initialOrderedWordList) {
-            statement = 'Das Wort "' + translateSpecialCharacters(word) + '" war auf Platz Nummer ' + position + ' in der nach Häufigkeit geordneten Liste aller Wörter des Ausgangstextes';
+            statement = 'Das Wort "' + translateSpecialCharacters(word) + '" war auf Platz Nummer ' + position + ' in der nach Häufigkeit geordneten Liste aller Wörter des Ausgangstextes.';
         } else if (list === orderedWords_RNN) {
             statement = 'Das Wort "' + translateSpecialCharacters(word) + '" war guess Nummer ' + position + ' von RNN.';
         } else if (list === orderedWords_FFNN) {
@@ -892,7 +914,7 @@ document.getElementById('chat-input').addEventListener('keyup', function(e) {
         let position = findWordPositionInList(preprocessedInput, listToUse_RNN);
         if (position !== null) {
             if (listToUse_RNN === initialOrderedWordList) {
-                console.log('Das Wort "' + translateSpecialCharacters(preprocessedInput) + '" war auf Platz Nummer ' + position + ' in der nach Häufigkeit geordneten Liste aller Wörter des Ausgangstextes');
+                console.log('Das Wort "' + translateSpecialCharacters(preprocessedInput) + '" war auf Platz Nummer ' + position + ' in der nach Häufigkeit geordneten Liste aller Wörter des Ausgangstextes.');
             } else {
                 console.log('Das Wort "' + translateSpecialCharacters(preprocessedInput) + '" war guess Nummer ' + position + ' von RNN.');
             }
@@ -924,25 +946,32 @@ document.getElementById('chat-input').addEventListener('keyup', function(e) {
             if (preprocessedInput.length > 0) {
             
                 //Wörter vervollständigen - RNN
-                //let predictionsRNN = predictRNN(preprocessedInput, 1);
-                let completion_RNN = completeWord(preprocessedInput, orderedWords_RNN);
-                if (completion_RNN) {
-                    console.log('RNN suggests: ' + completion_RNN);
+                let completion_RNN = completeWord(preprocessedInput, orderedWords_RNN, orderedConfidences_RNN, 3);
+                if (completion_RNN[0].word) {
+                    console.log('RNN suggests: ' + completion_RNN[0].word);
+                    plotPredictions(completion_RNN, 'RNN-predictions');
                 } else {
-                    let firstWordCompletion = completeWord(preprocessedInput, initialOrderedWordList);
+                    let firstWordCompletion = completeWord(preprocessedInput, initialOrderedWordList, initialWordConfidence, 3);
                     if (firstWordCompletion) {
-                        console.log('First word completion RNN: ' + firstWordCompletion);
+                        console.log('First word completion RNN: ' + firstWordCompletion[0].word);
+                        plotPredictions(firstWordCompletion, 'RNN-predictions');
+                    }else{
+                        Plotly.purge('RNN-predictions');
                     }
                 }
                
                 //Wörter vervollständigen - FFNN
-                let completion_FFNN = completeWord(preprocessedInput, orderedWords_FFNN);
-                if (completion_FFNN) {
-                    console.log('FFNN suggests: ' + completion_FFNN);
+                let completion_FFNN = completeWord(preprocessedInput, orderedWords_FFNN, orderedConfidences_FFNN, 3);
+                if (completion_FFNN[0].word) {
+                    console.log('FFNN suggests: ' + completion_FFNN[0].word);
+                    plotPredictions(completion_FFNN, 'FFNN-predictions');
                 } else {
-                    let firstWordCompletion = completeWord(preprocessedInput, initialOrderedWordList);
+                    let firstWordCompletion = completeWord(preprocessedInput, initialOrderedWordList, initialWordConfidence, 3);
                     if (firstWordCompletion) {
-                        console.log('First word completion FFNN: ' + firstWordCompletion);
+                        console.log('First word completion FFNN: ' + firstWordCompletion[0].word);
+                        plotPredictions(firstWordCompletion, 'FFNN-predictions');
+                    }else{
+                        Plotly.purge('FFNN-predictions');
                     }
                 }
 
