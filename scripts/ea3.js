@@ -695,7 +695,7 @@ function plotPredictions(predictions, elementId) {
     }
     
     // Prepare the labels and confidences
-    let labels = predictions.map(p => p.word ? translateSpecialCharacters(p.word) + '  ' : '').reverse();
+    let labels = predictions.map(p => p.word ? translateSpecialCharacters(p.word).replace(/null/g, ' ') + '  ' : '').reverse();
     let confidences = predictions.map(p => p.confidence).reverse();
 
     // Prepare the data for the bar chart
@@ -723,14 +723,24 @@ function plotPredictions(predictions, elementId) {
     // Create the bar chart
     Plotly.newPlot(elementId, data, {
         xaxis: {
-            automargin: true
+            automargin: false
         },
         yaxis: {
-            automargin: true,
+            automargin: false,
             tickfont: {
                 size: 20
             },
             tickpadding: 15
+        },
+        autosize: false, // Deaktivieren Sie die automatische Größenanpassung
+        width: 500,     // Setzen Sie die Breite des Diagramms
+        height: 400,     // Setzen Sie die Höhe des Diagramms
+        margin: {       // Legen Sie die Ränder manuell fest
+            l: 200,     // Erhöhen Sie diesen Wert, um mehr Platz für die y-Achsen-Labels zu schaffen
+            r: 50,
+            b: 100,
+            t: 100,
+            pad: 4
         }
     }, {
         displayModeBar: false
