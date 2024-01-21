@@ -1,0 +1,59 @@
+﻿<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>My DEEP Learning webpage</title>
+    <link href="styles/style.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Zilla+Slab:400,700|Open+Sans" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js"></script>
+  </head>
+  <body>
+    <header>
+        <h1> DEEP Learning Excercise Website </h1>
+        <div id="nav-menu">
+          <a href="index.html">EA1 - ml5 Image Classification</a>
+          <a href="ea2.html">EA2 - Regression </a>
+          <a href="ea3.html" class="current-main">EA3 - Language Model mit RNN</a>
+        </div>
+        <div class="sub-menu">
+            <div></div> <!-- Leerer Platzhalter für nicht ausgewählte Elemente -->
+            <div></div> <!-- Leerer Platzhalter für nicht ausgewählte Elemente -->
+            <div id="nav-menu">
+              <a href="ea3.html">word prediction</a>
+              <a href="documentation3.html" class="current">Documentation</a>
+              <a href="results-discussion3.html">Results and Discussion</a>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div id="white-area">
+            <h2>Ausgangstext</h2>
+            <p style="font-size:20px;">
+            Ausgangstext ist das Buch „Oliver Twist“ von Charles Dickens. Das Buch kann von Projekt Gutenberg kostenlos <a href=“https://www.gutenberg.org/ebooks/56586“>hier</a> heruntergeladen werden. Der Ausgangstext musste zunächst bereinigt werden: Einige << Wörter >> waren mit solchen doppelten Pfeilen umschlossen, die als ein einziges Zeichen hinterlegt waren, das nicht im Unicode oder utf-8-Format hinterlegt sind und somit nicht von meinem Coding erkannt werden konnten. Diese wurden zuvor gelöscht. Die Sonderzeichen /[.,\/#!$%\^&\*;:{}=\-_`~()] werden automatisch vom Programm erkannt und gelöscht. Die Anwendung stellt alle Schritte detailliert nachvollziehbar in der Konsole dar. Die Konsole unterstützt wiederum die Buchstaben ßüäö nicht. Diese werden im Ausgangstext daher durch <ss> für ß, <ae> für ä, <oe> für ö und <ue> für ü automatisch ersetzt. Dies geschieht allerdings nur im Hintergrund: Sämtliche Anzeigen rechnen alle Sonderzeichen äöüß wieder in ihre einfache Darstellung um und auch als Input kann der User beide Darstellungen verwenden. Groß- und Kleinschreibung wird unterschieden. 
+            </p>
+            <h2>Wörterbuch</h2>
+            <p style="font-size:20px;">
+            Das Programm erstellt ein Wörterbuch aus den ersten 10000 Wörtern des Ausgangstextes. Leere Wörter werden weggefiltert. Der vollständige Text konnte im Rahmen dieses Projektes nicht verwendet werden, da das Trainieren des Modells dann die maximale Kapazität der Browseranwendung gesprengt hat (das gibt eine Fehlermeldung und es wird dann gar nicht erst versucht, dieses zu Trainieren). Je nach Komplexität des Modells kann das Trainieren einer einzigen Epoche selbst mit der verringerten Datenmenge schon mehrere Minuten dauern. Ebenfalls wird erfasst, wie häufig die Wörter im Ausgangstext vorkommen. Dies ist wichtig für die Vorhersage des ersten Wortes (dazu später mehr). Aus dem Ausgangstext werden Sequenzen gebildet, die xs und ys in der Konsole einsehbar sind.
+            </p>
+            <h2>RNN- / FFNN-Modelle</h2>
+            <p style="font-size:20px;">
+            Auf diesen Sequenzen wurden RNN- und FFNN-Modelle trainiert (mit genau einem Zeitfenster als Input). Bei der doch relativ geringen Anzahl an Wörtern funktionierten schon einfache Modelle sehr gut: Bei komplexeren Modellen konnte keine große Differenz am Categorical Cross-Entropy Loss festgestellt werden, da sich auch die einfachen Modelle schon stark an den Ausgangstext anpassen, mit overfitting-Effekten, die hier aber zugelassen worden sind. Die finale RNN-Architektur ist ein tf.sequential()-Modell mit den beiden Layern RNNmodel.add(tf.layers.simpleRNN({units: 32, inputShape: [1, vocabSize]})); und RNNmodel.add(tf.layers.dense({units: vocabSize, activation: 'softmax'}));. Die finale FFNN-Architektur besteht ebenfalls aus 2 Layern: FFNNmodel.add(tf.layers.dense({units: 32, inputShape: [vocabSize], activation: 'relu'})); FFNNmodel.add(tf.layers.dense({units: vocabSize, activation: 'softmax'}));. Die Modelle wurden über hunderte Epochen trainiert. Beim Trainieren fällt auf, dass das Modell erst die Wörter vorhersagt, die besonders häufig im Ausgangstext vorkommen (und, der, die). Später richtet es sich weit mehr auf den Ausgangstext aus. Das komplette Coding befindet sich auf der github-Seite <a href=“ https://github.com/RobHeg/RobHeg.github.io/blob/main/scripts/ea3.js“>hier</a>. Die besten Modelle sind ebenfalls auf github <a href=“ https://github.com/RobHeg/RobHeg.github.io/blob/main/scripts/modelEA3.js“>hier</a> gespeichert.
+            </p>
+            <h2>User-Interaktion und Darstellung</h2>
+            <p style="font-size:20px;">
+            Der User hat die Möglichkeit, in dem Chatfenster im unteren mittleren Bereich Text einzugeben. Durch Drücken der Enter-Taste oder betätigen des Reset-Buttons wird die aktuelle Eingabe wie in einem Chatverlauf in der Mitte des Bildschirmes dargestellt, um nachzuvollziehen, was in früheren Versuchen eingegeben wurde (und vielleicht kann diese Anwendung irgendwann zu einem Chat erweitert werden). Die neueste Nachricht befindet sich immer unten. Sollte der Text zu lang werden um in das Fenster zu passen erscheint eine Scrollleiste, die standardmäßig nach unten gescrollt ist (um die aktuellste Nachricht anzuzeigen). Außerdem wird der Text im Eingabefenster gelöscht. Zudem wird das Input-Feld wieder aktiviert, damit der User nicht erneut auf dieses klicken muss, um weiter zu schreiben. Mit Shift-Enter kann in eine neue Zeile des Eingabefensters gesprungen werden. Außerdem erscheint auch dort eine Scrollleiste, sollte der User sehr viel Text eingeben. Der User kann Wörter eingeben und bekommt dafür kontinuierlich Vorschläge an den Seiten, um welches Wort es sich handeln könnte beziehungsweise was das nächste Wort sein könnte. Gibt der User einen einzelnen Buchstaben ein, so wird das angefangene Wort predicted. Gibt es ein Leerzeichen ein, so wird das nächste Wort predicted (siehe nächster Abschnitt).
+            </p>
+            <h2>Word prediction</h2>
+            <p style="font-size:20px;">
+            Da insbesondere FFNN mindestens ein Wort braucht, um eine Vorhersage treffen zu können wird das allererste Wort des User-Inputs anders vorhergesagt als die restlichen: Dazu wurde das Wörterbuch aus dem Ausgangstext nach Häufigkeit der Wörter in eine Liste sortiert. Beim ersten Wort des User-Inputs wird diese Liste von oben nach unten durchsucht, bis ein passendes Wort gefunden wurde, das mit den gleichen Buchstaben beginnt. Gibt der User ein Leerzeichen ein, findet die Wortvorhersage mit RNN und FFNN statt (allerdings nur, wenn es mindestens ein Wort gibt). Der User-Input wird dazu gleich der Ausgangtext-Bereinigung zunächst gefiltert und dann der Vorhersage übergeben. Dies führt zu zwei neuen Listen orderedWord_RNN und orderedWords_FFNN mit dazugehörigen Wahrscheinlichkeiten orderedConfidences_RNN und orderedConfidences_FFNN. Diese werden wiederum durchlaufen, wenn der User weitere Buchstaben eingibt. Die Ergebnisse werden jeweils kontinuierlich im linken und rechten Fenster angezeigt. Zu beachten ist, dass das erste Wort nicht wirklich von RNN und FFNN vorhergesagt wird, alle folgenden Wörter aber schon. Ein entsprechender Hinweis zeigt dies an.
+            </p>
+            <h2>Frameworks</h2>
+            <p style="font-size:20px;">
+            Die Website verwendet HTML, CSS und JavaScript für das Frontend und zwei frameworks von <a href="https://www.tensorflow.org/">tensorflow</a>. Zur Anzeige wird Gehostet werden meine Webseiten über <a href="https://pages.github.com/">GitHub Pages</a>. Der Quellcode befindet sich auf <a href="https://github.com/RobHeg/RobHeg.github.io">https://github.com/RobHeg/RobHeg.github.io</a>. Zur Darstellung der Ergebnischarts wird die empfohlene <a href="https://plotly.com/javascript/">plotly-Bibliothek</a> genutzt.
+            </p>
+        </div>
+    </main>
+  </body>
+</html>
